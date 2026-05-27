@@ -1,15 +1,14 @@
 {
   "name": "Backend",
-
   "dockerComposeFile": [
     "../../compose.yml",
     "../../compose.dev.yml"
   ],
-
   "service": "backend",
-
   "workspaceFolder": "/workspace",
-
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,readonly"
+  ],
   "customizations": {
     "vscode": {
       "extensions": [
@@ -19,7 +18,6 @@
         "Anthropic.claude-code",
         "github.copilot-chat"
       ],
-
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python"
       }

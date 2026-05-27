@@ -2,7 +2,12 @@
   "permissions": {
     "deny": [
       "Read(./.env*)",
-      "Read(./**/.env*)"
+      "Read(./**/.env*)",
+      "Read(./**/.ssh/**)",
+      "Read(/root/.ssh/**)",
+      "Read(/home/**/.ssh/**)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)"
     ]
   }
 }

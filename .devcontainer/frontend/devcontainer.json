@@ -6,6 +6,9 @@
   ],
   "service": "frontend",
   "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,readonly"
+  ],
   "customizations": {
     "vscode": {
       "extensions": [

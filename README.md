@@ -1,4 +1,4 @@
-# greatw-persona-chat
+# greate-persona-chat
 
 ペルソナを設定してチャットできるアプリ。
 

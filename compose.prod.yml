@@ -1,0 +1,13 @@
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    environment:
+      DEBUG: "false"
+
+
+  frontend:
+    build:
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped

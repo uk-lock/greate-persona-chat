@@ -1,0 +1,28 @@
+{
+  "name": "Backend",
+
+  "dockerComposeFile": [
+    "../../compose.yml",
+    "../../compose.dev.yml"
+  ],
+
+  "service": "backend",
+
+  "workspaceFolder": "/workspace",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ruff-lang.ruff",
+        "Anthropic.claude-code",
+        "github.copilot-chat"
+      ],
+
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python"
+      }
+    }
+  }
+}

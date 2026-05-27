@@ -1,0 +1,24 @@
+{
+  "name": "Frontend",
+  "dockerComposeFile": [
+    "../../compose.yml",
+    "../../compose.dev.yml"
+  ],
+  "service": "frontend",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "Anthropic.claude-code",
+        "github.copilot-chat"
+      ],
+      "settings": {
+        "js/ts.preferences.importModuleSpecifier": "relative",
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      }
+    }
+  }
+}

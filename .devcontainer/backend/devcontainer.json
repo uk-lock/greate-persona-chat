@@ -16,7 +16,8 @@
         "ms-python.vscode-pylance",
         "ruff-lang.ruff",
         "Anthropic.claude-code",
-        "github.copilot-chat"
+        "github.copilot-chat",
+        "shd101wyy.markdown-preview-enhanced"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python"

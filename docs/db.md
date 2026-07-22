@@ -22,13 +22,21 @@
 | id | BIGINT | ○ | PK | ペルソナID |
 | name | VARCHAR(255) | ○ |  | ペルソナ名 |
 | country | VARCHAR(255) |  |  | 国 |
+| era | VARCHAR(255) |  |  | 年代 |
 | summary | TEXT |  |  | 概要 |
 | description | TEXT |  |  | 詳細説明 |
+| personality | TEXT |  |  | 性格 |
+| biography | TEXT |  |  | 経歴 |
+| sample_quotes | JSONB |  |  | 発言例（文字列配列） |
 | is_deleted | BOOLEAN | ○ |  | 論理削除フラグ |
 | created_at | DATETIME | ○ |  | 作成日時 |
 | updated_at | DATETIME | ○ |  | 更新日時 |
 | created_by | VARCHAR(255) | ○ |  | 作成者 |
 | updated_by | VARCHAR(255) | ○ |  | 更新者 |
+
+### 備考
+
+- `sample_quotes` は `["発言例1", "発言例2", ...]` のような文字列配列のJSONを想定する。
 
 ---
 
@@ -63,12 +71,16 @@
 | id | BIGINT | ○ | PK | チャットペルソナID |
 | chat_id | BIGINT | ○ | FK | チャットID |
 | persona_id | BIGINT | ○ | FK | ペルソナID |
-| sort_no | INT | ○ |  | 表示順・発言順 |
+| sort_no | INT | ○ | UK | 表示順・発言順 |
 | is_deleted | BOOLEAN | ○ |  | 論理削除フラグ |
 | created_at | DATETIME | ○ |  | 作成日時 |
 | updated_at | DATETIME | ○ |  | 更新日時 |
 | created_by | VARCHAR(255) | ○ |  | 作成者 |
 | updated_by | VARCHAR(255) | ○ |  | 更新者 |
+
+### 備考
+
+- `sort_no` は `chat_id` ごとに一意とする（複合ユニーク: `chat_id` + `sort_no`）。
 
 ---
 
@@ -94,4 +106,5 @@
   - `USER`: ユーザ発言
   - `PERSONA`: ペルソナ発言
 - `speaker_type = PERSONA` の場合、`persona_id` は必須。
-- `speaker_type = USER` または `SYSTEM` の場合、`persona_id` は `NULL` とする。
+- `speaker_type = USER` の場合、`persona_id` は `NULL` とする。
+- `sort_no` は `chat_id` ごとに一意とする（複合ユニーク: `chat_id` + `sort_no`）。

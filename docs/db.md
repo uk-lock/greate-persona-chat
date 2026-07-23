@@ -7,11 +7,17 @@
 | id | BIGINT | ○ | PK | ユーザID |
 | login_id | VARCHAR(255) | ○ | UK | ログインID |
 | password_hash | VARCHAR(255) | ○ |  | パスワードハッシュ |
+| failed_login_count | INT | ○ |  | ログイン連続失敗回数 |
+| locked_until | DATETIME |  |  | ロック解除日時（未ロック時はNULL） |
 | is_deleted | BOOLEAN | ○ |  | 論理削除フラグ |
 | created_at | DATETIME | ○ |  | 作成日時 |
 | updated_at | DATETIME | ○ |  | 更新日時 |
 | created_by | VARCHAR(255) | ○ |  | 作成者 |
 | updated_by | VARCHAR(255) | ○ |  | 更新者 |
+
+### 備考
+
+- `failed_login_count` が10に達した時点で `locked_until` に現在時刻+15分を設定してログインをロックする。ログイン成功時、または `locked_until` 経過後は `failed_login_count` を0、`locked_until` をNULLにリセットする。
 
 ---
 
@@ -21,6 +27,7 @@
 |---|---:|:---:|---|---|
 | id | BIGINT | ○ | PK | ペルソナID |
 | name | VARCHAR(255) | ○ |  | ペルソナ名 |
+| image_url | VARCHAR(255) |  |  | 肖像画像URL |
 | country | VARCHAR(255) |  |  | 国 |
 | era | VARCHAR(255) |  |  | 年代 |
 | summary | TEXT |  |  | 概要 |
@@ -37,6 +44,7 @@
 ### 備考
 
 - `sample_quotes` は `["発言例1", "発言例2", ...]` のような文字列配列のJSONを想定する。
+- `image_url` が `NULL` の場合、画面側でデフォルトのプレースホルダー画像を表示する。
 
 ---
 
@@ -61,6 +69,7 @@
 - `chat_mode` は以下の値を想定する。
   - `PERSONA_ONLY`: ペルソナ同士のみの会話
   - `USER_PARTICIPATED`: ユーザが参加する会話
+- `title` はチャット作成時点では固定文言（例：「新規チャット」）で登録し、会話が進んだ後にLLMが内容から生成したタイトルで更新する。
 
 ---
 

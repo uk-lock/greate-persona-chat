@@ -21,5 +21,6 @@ model: inherit
 - 権限境界
 - 秘密情報の漏えい経路
 - バリデーションやエスケープ漏れ
+- `docs/coding/backend-python.md`（15節：パスワードハッシュ・JWT/Cookie・CSRF・インジェクション対策）への準拠。対象がTypeScript/Reactの場合は`docs/coding/frontend-typescript-react.md`の該当節も参照する
 
 コードを実装したり、要件を勝手に変えたり、根拠のないまま過大な懸念を示したりしないでください。

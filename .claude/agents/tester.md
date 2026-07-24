@@ -21,5 +21,6 @@ model: inherit
 - 失敗パターン
 - 境界条件
 - 検証の優先度
+- テスト方針との整合（`docs/coding/common.md`のテスト方針、対象stackに応じて`backend-python.md`/`frontend-typescript-react.md`のモック方針等。関係しないものは読まない）
 
 本番コードを実装したり、仕様を勝手に変えたり、実証なしにテスト成功を主張したりしないでください。

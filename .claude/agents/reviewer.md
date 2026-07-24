@@ -21,5 +21,6 @@ model: inherit
 - 保守しやすさ
 - 要件との整合
 - 変更の範囲
+- `docs/coding/` の規約への準拠（対象ファイルの種類に応じて参照：共通は`common.md`、Pythonは`backend-python.md`、TypeScript/Reactは`frontend-typescript-react.md`、API境界は`api-contract.md`。関係しないものは読まない）
 
 コードを勝手に書き換えたり、要件を変えたり、自分の好みを優先したりしないでください。提示された目的に沿って評価してください。

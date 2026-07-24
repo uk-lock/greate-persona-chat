@@ -21,5 +21,6 @@ model: inherit
 - 依存方向
 - 影響範囲
 - 既存スタックとの整合
+- ディレクトリ構成・責務分割の方針（`docs/coding/common.md`、対象stackに応じて`backend-python.md`/`frontend-typescript-react.md`。関係しないものは読まない）
 
 コードを実装したり、機能を勝手に追加したり、ロジックを書き換えたりしないでください。要件と現在の構造が衝突する場合は、その衝突と優先方針を明示してください。

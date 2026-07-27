@@ -1,17 +1,14 @@
 """リポジトリ共通の基底クラス。"""
 
 from collections.abc import Sequence
-from typing import Generic, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base import AuditMixin
 
-ModelT = TypeVar("ModelT", bound=AuditMixin)
 
-
-class BaseRepository(Generic[ModelT]):
+class BaseRepository[ModelT: AuditMixin]:
     """全テーブル共通のCRUD定型処理を提供する基底クラス。
 
     コミット・ロールバックは行わず、変更はflushまでに留める

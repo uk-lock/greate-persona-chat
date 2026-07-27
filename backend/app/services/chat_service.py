@@ -99,7 +99,12 @@ class ChatService:
             for sort_no, persona_id in enumerate(persona_ids, start=1)
         ]
         await self._chat_persona_repository.add_all(chat_personas)
-        return chat
+
+        created_chat = await self._chat_repository.get_by_id(chat.id)
+        if created_chat is None:
+            # 直前にflush済みのchatが直後に取得できないことは通常想定しない
+            raise NotFoundError("チャットの作成に失敗しました")
+        return created_chat
 
     async def delete(self, chat_id: int, current_user: User) -> None:
         """チャットを論理削除する。
@@ -116,6 +121,34 @@ class ChatService:
         chat.is_deleted = True
         chat.updated_by = current_user.login_id
         await self._chat_repository.flush()
+
+    async def get_chat_mode(self, chat_id: int, current_user: User) -> ChatMode:
+        """チャットのモードのみを取得する（SSE配信時のループ継続要否判定用）。
+
+        Args:
+            chat_id: 対象のチャットid。
+            current_user: 操作を行うログインユーザ。
+
+        Returns:
+            chat_mode。
+
+        Raises:
+            NotFoundError: チャットが存在しない、または論理削除済みの場合。
+            ForbiddenError: 他ユーザーが作成したチャットの場合。
+        """
+        chat = await self._get_owned_chat(chat_id, current_user)
+        return chat.chat_mode
+
+    async def get_is_stopped(self, chat_id: int) -> bool:
+        """会話停止フラグの最新値を取得する（PERSONA_ONLYの自動進行ポーリング用）。
+
+        Args:
+            chat_id: 対象のチャットid。
+
+        Returns:
+            is_stoppedの最新値。
+        """
+        return await self._chat_repository.get_is_stopped(chat_id)
 
     async def get_messages(
         self, chat_id: int, current_user: User

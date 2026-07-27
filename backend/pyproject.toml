@@ -1,0 +1,8 @@
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+ignore = [
+    "B008", # FastAPIのDepends()をデフォルト引数に書く慣用パターンのため許容する
+]

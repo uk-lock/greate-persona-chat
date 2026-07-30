@@ -1,4 +1,5 @@
 import type { cookies } from "next/headers";
+import { AUTH_COOKIE_NAME } from "@/lib/constants";
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
 
@@ -63,4 +64,14 @@ export const applySetCookies = (cookieStore: CookieStore, setCookieHeaders: stri
       cookieStore.set(parsed.name, parsed.value, parsed.options);
     }
   }
+};
+
+/** Next.jsのCookieStoreから、バックエンドへ転送する認証Cookieヘッダー文字列を組み立てる。
+ *
+ * Server Component/ActionからのfetchはブラウザのCookieを自動転送しないため、認証が必要な
+ * API呼び出しでは`lib/api-client.ts`の`cookie`オプションへ渡す文字列をここで明示的に組み立てる。
+ */
+export const getAuthCookieHeader = (cookieStore: CookieStore): string | undefined => {
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+  return token ? `${AUTH_COOKIE_NAME}=${token}` : undefined;
 };

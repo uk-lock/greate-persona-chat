@@ -428,6 +428,25 @@ type Props = {
 
 ---
 
-## 今後検討する論点（フロントエンド・React固有／未決定）
+## 21. 関数の宣言方法
 
-frontend-typescript-react.md固有の論点は以上で一通り確定した。今後、フロントエンド/バックエンド境界の論点（common.mdの範囲外・両ファイルにまたがるもの）を別途扱う。
+**状態：確定**
+
+### ルール
+
+- 関数は`function`宣言ではなく**アロー関数**で統一する。Reactコンポーネント・Server Action・通常のユーティリティ関数のいずれも対象とする。
+- `export default`が必須なファイル（`page.tsx`/`layout.tsx`等のNext.js規約ファイル）では、アロー関数を`const`で定義した上で`export default`を別行で行う。
+
+### 例
+
+```typescript
+// 悪い例：function宣言
+export function loginAction(values: LoginFormValues) { ... }
+
+// 良い例：アロー関数
+export const loginAction = async (values: LoginFormValues) => { ... };
+```
+
+### 理由
+
+- プロジェクト内で記法を統一し、レビュー・実装時の迷いをなくす。`function`宣言・アロー関数のいずれも機能的な差はこのプロジェクトの用途では問題にならないため、統一のみを目的とする。

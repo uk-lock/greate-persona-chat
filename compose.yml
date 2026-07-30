@@ -11,12 +11,15 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    ports: 
+    ports:
       - "${BACKEND_PORT:-8000}:8000"
 
   frontend:
     build:
       context: ./frontend
+    environment:
+      API_BASE_URL: ${API_BASE_URL}
+      SIGNUP_ENABLED: ${SIGNUP_ENABLED}
     depends_on:
       - backend
     networks:

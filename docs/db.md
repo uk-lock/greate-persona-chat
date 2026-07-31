@@ -53,7 +53,8 @@
 
 | カラム名 | データ型 | NOT NULL | Key | 概要 |
 |---|---:|:---:|---|---|
-| id | BIGINT | ○ | PK | チャットID |
+| id | BIGINT | ○ | PK | チャットID（内部PK） |
+| public_id | UUID | ○ | UK | 外部公開用チャットID（URL・APIレスポンスで使用） |
 | user_id | BIGINT | ○ | FK | ユーザID |
 | title | VARCHAR(255) | ○ |  | チャットタイトル |
 | chat_mode | VARCHAR(50) | ○ |  | チャットモード |
@@ -71,6 +72,7 @@
   - `PERSONA_ONLY`: ペルソナ同士のみの会話
   - `USER_PARTICIPATED`: ユーザが参加する会話
 - `title` はチャット作成時点では固定文言（例：「新規チャット」）で登録し、会話が進んだ後にLLMが内容から生成したタイトルで更新する。
+- `public_id`は連番の`id`をURL・APIレスポンスにそのまま露出させない（推測・列挙されない）ための識別子。`t_chat_message`・`t_chat_persona`のFKは引き続き内部PK（`id`）を参照し、`public_id`は`t_chat`単体の識別子として追加する。アプリ側で`uuid.uuid4()`により生成する（DB側のデフォルト生成は使わない）。
 
 ---
 

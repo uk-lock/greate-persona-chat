@@ -1,5 +1,6 @@
 """チャット関連のリクエスト/レスポンススキーマ。"""
 
+import uuid
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -40,9 +41,12 @@ class ChatResponse(BaseModel):
 
     participantsの合成（USER_PARTICIPATEDの場合の「あなた」要素の付与等）が
     必要なため、from_attributesによる自動変換は行わずルーター側で組み立てる。
+
+    chat_idは外部公開用ID（t_chat.public_id、UUID）であり、内部PK（BIGINT）とは
+    別物（app/models/chat.py参照）。
     """
 
-    chat_id: int
+    chat_id: uuid.UUID
     title: str
     chat_mode: ChatMode
     updated_at: datetime

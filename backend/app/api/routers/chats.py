@@ -1,6 +1,7 @@
 """チャット関連のルーター。"""
 
 import asyncio
+import uuid
 from collections.abc import AsyncIterator, Sequence
 
 from fastapi import APIRouter, Depends, Request, Response
@@ -45,7 +46,7 @@ def _build_chat_response(chat: Chat) -> ChatResponse:
         for chat_persona in chat.chat_personas
     )
     return ChatResponse(
-        chat_id=chat.id,
+        chat_id=chat.public_id,
         title=chat.title,
         chat_mode=chat.chat_mode,
         updated_at=chat.updated_at,
@@ -117,9 +118,26 @@ async def create_chat(
     return _build_chat_response(chat)
 
 
+@router.get("/{chat_id}")
+async def get_chat(
+    chat_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    chat_service: ChatService = Depends(get_chat_service),
+) -> ChatResponse:
+    """チャット単体を取得する（S03ヘッダー表示用：タイトル・chat_mode・参加者）。
+
+    Raises:
+        NotFoundError: チャットが存在しない、または論理削除済みの場合（404に変換される）。
+        ForbiddenError: 他ユーザーが作成したチャットの場合（403に変換される）。
+    """
+    internal_chat_id = await chat_service.resolve_internal_id(chat_id)
+    chat = await chat_service.get_by_id(internal_chat_id, current_user)
+    return _build_chat_response(chat)
+
+
 @router.delete("/{chat_id}", status_code=204)
 async def delete_chat(
-    chat_id: int,
+    chat_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     chat_service: ChatService = Depends(get_chat_service),
 ) -> Response:
@@ -129,13 +147,14 @@ async def delete_chat(
         NotFoundError: チャットが存在しない、または論理削除済みの場合（404に変換される）。
         ForbiddenError: 他ユーザーが作成したチャットの場合（403に変換される）。
     """
-    await chat_service.delete(chat_id, current_user)
+    internal_chat_id = await chat_service.resolve_internal_id(chat_id)
+    await chat_service.delete(internal_chat_id, current_user)
     return Response(status_code=204)
 
 
 @router.get("/{chat_id}/messages")
 async def get_messages(
-    chat_id: int,
+    chat_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     chat_service: ChatService = Depends(get_chat_service),
 ) -> list[ChatMessageResponse]:
@@ -145,18 +164,25 @@ async def get_messages(
         NotFoundError: チャットが存在しない、または論理削除済みの場合（404に変換される）。
         ForbiddenError: 他ユーザーが作成したチャットの場合（403に変換される）。
     """
-    messages = await chat_service.get_messages(chat_id, current_user)
+    internal_chat_id = await chat_service.resolve_internal_id(chat_id)
+    messages = await chat_service.get_messages(internal_chat_id, current_user)
     return [ChatMessageResponse.model_validate(message) for message in messages]
 
 
 @router.post("/{chat_id}/messages")
 @limiter.limit(
-    f"{constants.RATE_LIMIT_MESSAGE_PER_MINUTE}/minute;{constants.RATE_LIMIT_MESSAGE_PER_DAY}/day",
+    f"{constants.RATE_LIMIT_MESSAGE_PER_MINUTE}/minute",
     key_func=get_user_id_for_rate_limit,
+    error_message="送信回数が上限に達しました。しばらくしてから再度お試しください。",
+)
+@limiter.limit(
+    f"{constants.RATE_LIMIT_MESSAGE_PER_DAY}/day",
+    key_func=get_user_id_for_rate_limit,
+    error_message="本日の送信回数の上限に達しました。日付が変わってから再度お試しください。",
 )
 async def post_message(
     request: Request,
-    chat_id: int,
+    chat_id: uuid.UUID,
     body: PostMessageRequest,
     current_user: User = Depends(get_current_user),
     chat_service: ChatService = Depends(get_chat_service),
@@ -171,13 +197,19 @@ async def post_message(
         ForbiddenError: 他ユーザーが作成したチャットの場合（403に変換される）。
         ValidationError: USER_PARTICIPATEDモードでmessageが空の場合（400に変換される）。
     """
-    chat_mode = await chat_service.get_chat_mode(chat_id, current_user)
+    internal_chat_id = await chat_service.resolve_internal_id(chat_id)
+    chat_mode = await chat_service.get_chat_mode(internal_chat_id, current_user)
     first_turn_messages = await chat_service.advance_conversation(
-        chat_id, current_user, body.message
+        internal_chat_id, current_user, body.message
     )
     return StreamingResponse(
         _stream_conversation(
-            chat_id, current_user, chat_mode, first_turn_messages, request, chat_service
+            internal_chat_id,
+            current_user,
+            chat_mode,
+            first_turn_messages,
+            request,
+            chat_service,
         ),
         media_type="text/event-stream",
     )
@@ -185,7 +217,7 @@ async def post_message(
 
 @router.post("/{chat_id}/stop", status_code=204)
 async def stop_chat(
-    chat_id: int,
+    chat_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     chat_service: ChatService = Depends(get_chat_service),
 ) -> Response:
@@ -195,5 +227,6 @@ async def stop_chat(
         NotFoundError: チャットが存在しない、または論理削除済みの場合（404に変換される）。
         ForbiddenError: 他ユーザーが作成したチャットの場合（403に変換される）。
     """
-    await chat_service.stop(chat_id, current_user)
+    internal_chat_id = await chat_service.resolve_internal_id(chat_id)
+    await chat_service.stop(internal_chat_id, current_user)
     return Response(status_code=204)

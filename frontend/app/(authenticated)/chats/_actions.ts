@@ -8,7 +8,7 @@ import { getAuthCookieHeader } from "@/lib/cookie";
 export type DeleteChatActionResult = { error: string } | undefined;
 
 /** チャット削除（`DELETE /chats/{chat_id}`）。削除確認ダイアログでOKが押された際に呼び出す。 */
-export const deleteChatAction = async (chatId: number): Promise<DeleteChatActionResult> => {
+export const deleteChatAction = async (chatId: string): Promise<DeleteChatActionResult> => {
   const cookieStore = await cookies();
   const cookieHeader = getAuthCookieHeader(cookieStore);
 

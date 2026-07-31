@@ -2,8 +2,9 @@
 
 from fastapi import APIRouter, Depends
 
-from app.api.dependencies import get_persona_service
+from app.api.dependencies import get_current_user, get_persona_service
 from app.api.schemas.persona import PersonaDetailResponse, PersonaSummaryResponse
+from app.models.user import User
 from app.services.persona_service import PersonaService
 
 router = APIRouter(prefix="/personas", tags=["personas"])
@@ -11,6 +12,7 @@ router = APIRouter(prefix="/personas", tags=["personas"])
 
 @router.get("")
 async def get_personas(
+    current_user: User = Depends(get_current_user),
     persona_service: PersonaService = Depends(get_persona_service),
 ) -> list[PersonaSummaryResponse]:
     """ペルソナ一覧をid昇順で取得する。"""
@@ -21,6 +23,7 @@ async def get_personas(
 @router.get("/{persona_id}")
 async def get_persona(
     persona_id: int,
+    current_user: User = Depends(get_current_user),
     persona_service: PersonaService = Depends(get_persona_service),
 ) -> PersonaDetailResponse:
     """ペルソナ詳細を取得する。

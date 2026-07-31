@@ -13,7 +13,7 @@ type Props = {
 /** S02 チャット履歴画面のリスト本体（Client Component）。削除確認ダイアログの状態を持つ。 */
 export const ChatList = ({ initialChats }: Props) => {
   const [chats, setChats] = useState(initialChats);
-  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 

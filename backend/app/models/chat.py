@@ -1,9 +1,10 @@
 """チャット（t_chat）のSQLAlchemyモデル。"""
 
+import uuid
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Boolean, ForeignKey, String
+from sqlalchemy import BigInteger, Boolean, ForeignKey, String, Uuid
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -26,6 +27,15 @@ class Chat(AuditMixin, Base):
     """ユーザとペルソナによるチャットセッション。"""
 
     __tablename__ = "t_chat"
+
+    public_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), nullable=False, unique=True, default=uuid.uuid4
+    )
+    """外部公開用のチャットID（URL・APIレスポンスで使用）。
+
+    内部PK（id、BIGINT）は他テーブルとのFK関係でそのまま使い続け、外部に見せる識別子だけ
+    連番から推測されないUUIDに分離する（t_chat_message・t_chat_personaのFK型は変更しない）。
+    """
 
     user_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("m_user.id"), nullable=False

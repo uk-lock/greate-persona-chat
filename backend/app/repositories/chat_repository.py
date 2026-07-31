@@ -1,5 +1,6 @@
 """チャット（t_chat）のリポジトリ。"""
 
+import uuid
 from collections.abc import Sequence
 
 from sqlalchemy import select
@@ -28,6 +29,21 @@ class ChatRepository(BaseRepository[Chat]):
             select(Chat)
             .where(Chat.id == entity_id, Chat.is_deleted.is_(False))
             .options(selectinload(Chat.chat_personas).selectinload(ChatPersona.persona))
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_by_public_id(self, public_id: uuid.UUID) -> Chat | None:
+        """外部公開用ID（UUID）からチャットを取得する（内部PKの解決用）。
+
+        Args:
+            public_id: URL・APIレスポンスで公開しているチャットID。
+
+        Returns:
+            該当チャット。存在しない、または論理削除済みの場合はNone。
+        """
+        stmt = select(Chat).where(
+            Chat.public_id == public_id, Chat.is_deleted.is_(False)
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()

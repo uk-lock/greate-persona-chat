@@ -11,9 +11,11 @@ vi.mock("@/app/(authenticated)/chats/_actions", () => ({
 
 const mockedDeleteChatAction = vi.mocked(deleteChatAction);
 
+const CHAT_ID = "11111111-1111-1111-1111-111111111111";
+
 const buildChats = (): Chat[] => [
   {
-    chat_id: 1,
+    chat_id: CHAT_ID,
     title: "歴史談義",
     chat_mode: "USER_PARTICIPATED",
     updated_at: "2026-07-30T09:00:00+09:00",
@@ -26,7 +28,7 @@ const buildChats = (): Chat[] => [
 
 describe("ChatList", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   test("チャットが0件の場合は案内文言のみを表示する", () => {
@@ -44,7 +46,10 @@ describe("ChatList", () => {
     expect(screen.getByText("歴史談義")).toBeInTheDocument();
     expect(screen.getByText("あなた")).toBeInTheDocument();
     expect(screen.getByText("織田信長")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute("href", "/chats/1");
+    expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute(
+      "href",
+      `/chats/${CHAT_ID}`,
+    );
   });
 
   test("削除ボタン押下で確認ダイアログを表示し、OKで削除してリストから消す", async () => {
@@ -57,7 +62,7 @@ describe("ChatList", () => {
 
     await user.click(screen.getByRole("button", { name: "OK" }));
 
-    expect(mockedDeleteChatAction).toHaveBeenCalledWith(1);
+    expect(mockedDeleteChatAction).toHaveBeenCalledWith(CHAT_ID);
     expect(await screen.findByText("まだチャットがありません。新規チャットから会話を始めましょう。")).toBeInTheDocument();
   });
 

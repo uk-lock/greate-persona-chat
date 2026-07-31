@@ -5,9 +5,12 @@ export type Participant =
 
 export type ChatMode = "USER_PARTICIPATED" | "PERSONA_ONLY";
 
-/** `GET /chats`のレスポンス1件分（api.md参照）。 */
+/** `GET /chats`のレスポンス1件分（api.md参照）。
+ *
+ * `chat_id`は`t_chat.public_id`（UUID文字列）。連番の内部PKは公開しない。
+ */
 export type Chat = {
-  chat_id: number;
+  chat_id: string;
   title: string;
   chat_mode: ChatMode;
   updated_at: string;

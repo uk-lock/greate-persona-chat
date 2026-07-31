@@ -28,13 +28,13 @@ const mockedRedirect = vi.mocked(redirect);
 
 describe("fetchChats", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   test("取得に成功した場合はチャット一覧を返す", async () => {
     const chats = [
       {
-        chat_id: 1,
+        chat_id: "11111111-1111-1111-1111-111111111111",
         title: "新規チャット",
         chat_mode: "USER_PARTICIPATED",
         updated_at: "2026-07-30T09:00:00+09:00",

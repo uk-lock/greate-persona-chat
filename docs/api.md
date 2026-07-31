@@ -40,6 +40,8 @@ Cookieに設定されたJWTを破棄する。
 
 ## Chats
 
+以降、`{chat_id}`はすべて`t_chat.public_id`（UUID）を指す。連番の内部PK（`t_chat.id`）はAPIでは公開しない（[db.md](./db.md) `t_chat`参照）。
+
 ### チャット一覧取得
 
 ```http
@@ -49,6 +51,16 @@ GET /chats
 チャット履歴画面で、ログインユーザのチャット一覧を取得する。他ユーザーが作成したチャットは含めない（`t_chat.user_id` が一致するもののみ）。レスポンスにはチャットごとに `title`・`chat_mode`・`updated_at`・参加者一覧（`participants`）を含め、`updated_at`降順で返す。
 
 `participants` は `chat_mode` が `USER_PARTICIPATED` の場合、先頭に `{ "type": "USER", "name": "あなた" }` を含め、続けてペルソナ（`t_chat_persona.sort_no`順、`{ "type": "PERSONA", "persona_id", "name", "image_url" }`）を並べる。`PERSONA_ONLY` の場合はペルソナのみを`sort_no`順に並べる。
+
+---
+
+### チャット単体取得
+
+```http
+GET /chats/{chat_id}
+```
+
+チャット画面（S03）のヘッダー表示（タイトル・`chat_mode`・参加者一覧）用に、チャット1件を取得する。レスポンス形式は「チャット一覧取得」と同じ`participants`を含む形とする。ログインユーザ自身が作成したチャットのみ取得可能とし、他ユーザーが作成したチャットに対しては403を返す。`chat_id`が存在しない、または削除済みの場合は404を返す。
 
 ---
 

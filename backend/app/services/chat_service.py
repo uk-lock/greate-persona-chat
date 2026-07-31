@@ -1,5 +1,6 @@
 """チャット・チャットメッセージに関するユースケース。"""
 
+import uuid
 from collections.abc import Sequence
 
 from app.config.constants import DEFAULT_CHAT_TITLE
@@ -37,6 +38,27 @@ class ChatService:
         self._chat_persona_repository = chat_persona_repository
         self._chat_message_repository = chat_message_repository
         self._persona_repository = persona_repository
+
+    async def resolve_internal_id(self, public_id: uuid.UUID) -> int:
+        """外部公開用のchat_id（UUID）から内部PK（BIGINT）を解決する。
+
+        所有者チェックはここでは行わない。既存の各メソッドが内部PKに対して
+        `_get_owned_chat`で改めて所有者チェックを行うため、ここでは
+        「存在するか（論理削除されていないか）」のみを確認する。
+
+        Args:
+            public_id: URL・APIレスポンスで公開しているチャットID。
+
+        Returns:
+            内部PK（`t_chat.id`）。
+
+        Raises:
+            NotFoundError: 該当するチャットが存在しない、または論理削除済みの場合。
+        """
+        chat = await self._chat_repository.get_by_public_id(public_id)
+        if chat is None:
+            raise NotFoundError("チャットが見つかりません")
+        return chat.id
 
     async def get_by_user(self, current_user: User) -> Sequence[Chat]:
         """ログインユーザのチャット一覧をupdated_at降順で取得する。
@@ -121,6 +143,22 @@ class ChatService:
         chat.is_deleted = True
         chat.updated_by = current_user.login_id
         await self._chat_repository.flush()
+
+    async def get_by_id(self, chat_id: int, current_user: User) -> Chat:
+        """チャット単体を取得する（S03ヘッダー表示用：タイトル・chat_mode・参加者）。
+
+        Args:
+            chat_id: 対象のチャットid。
+            current_user: 操作を行うログインユーザ。
+
+        Returns:
+            該当チャット。
+
+        Raises:
+            NotFoundError: チャットが存在しない、または論理削除済みの場合。
+            ForbiddenError: 他ユーザーが作成したチャットの場合。
+        """
+        return await self._get_owned_chat(chat_id, current_user)
 
     async def get_chat_mode(self, chat_id: int, current_user: User) -> ChatMode:
         """チャットのモードのみを取得する（SSE配信時のループ継続要否判定用）。

@@ -41,7 +41,7 @@ describe("fetchPersona", () => {
       summary: "概要",
       description: "詳細",
       personality: "性格",
-      biography: "経歴",
+      biography: [{ year: 1560, event: "経歴" }],
       sample_quotes: ["是非に及ばず"],
     };
     mockedGet.mockResolvedValueOnce({ data: persona, setCookie: [] });

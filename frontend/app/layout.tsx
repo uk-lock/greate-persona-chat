@@ -1,25 +1,16 @@
 import type { Metadata } from "next";
-import { Cinzel, EB_Garamond, Shippori_Mincho, Noto_Serif_JP } from "next/font/google";
+import { Zen_Kaku_Gothic_New, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 
-const cinzel = Cinzel({
-  variable: "--font-cinzel",
+const zenKakuGothicNew = Zen_Kaku_Gothic_New({
+  variable: "--font-zen-kaku-gothic-new",
+  weight: ["500", "700", "900"],
   subsets: ["latin"],
 });
 
-const ebGaramond = EB_Garamond({
-  variable: "--font-eb-garamond",
-  subsets: ["latin"],
-});
-
-const shipporiMincho = Shippori_Mincho({
-  variable: "--font-shippori-mincho",
-  weight: ["400", "600", "800"],
-  subsets: ["latin"],
-});
-
-const notoSerifJp = Noto_Serif_JP({
-  variable: "--font-noto-serif-jp",
+const notoSansJp = Noto_Sans_JP({
+  variable: "--font-noto-sans-jp",
+  weight: ["400", "500", "600"],
   subsets: ["latin"],
 });
 
@@ -36,7 +27,7 @@ const RootLayout = ({
   return (
     <html
       lang="ja"
-      className={`${cinzel.variable} ${ebGaramond.variable} ${shipporiMincho.variable} ${notoSerifJp.variable} h-full antialiased`}
+      className={`${zenKakuGothicNew.variable} ${notoSansJp.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

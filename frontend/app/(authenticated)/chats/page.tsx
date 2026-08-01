@@ -10,7 +10,7 @@ const ChatsPage = async () => {
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-8 py-10">
-      <h1 className="font-display text-2xl tracking-wide text-gold">チャット履歴</h1>
+      <h1 className="font-display text-2xl font-bold tracking-wide text-heading">チャット履歴</h1>
       <ChatList initialChats={chats} />
     </div>
   );

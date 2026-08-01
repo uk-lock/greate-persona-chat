@@ -1,6 +1,6 @@
 """ペルソナ（m_persona）のSQLAlchemyモデル。"""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 
 from sqlalchemy import String, Text
 from sqlalchemy.dialects.postgresql import JSONB
@@ -11,6 +11,13 @@ from app.models.base import AuditMixin, Base
 if TYPE_CHECKING:
     from app.models.chat_message import ChatMessage
     from app.models.chat_persona import ChatPersona
+
+
+class BiographyEntry(TypedDict):
+    """biographyの年表1件分（例：`{"year": 1780, "event": "XXXをした"}`）。"""
+
+    year: int
+    event: str
 
 
 class Persona(AuditMixin, Base):
@@ -25,7 +32,7 @@ class Persona(AuditMixin, Base):
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     personality: Mapped[str | None] = mapped_column(Text, nullable=True)
-    biography: Mapped[str | None] = mapped_column(Text, nullable=True)
+    biography: Mapped[list[BiographyEntry] | None] = mapped_column(JSONB, nullable=True)
     sample_quotes: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
 
     chat_personas: Mapped[list["ChatPersona"]] = relationship(

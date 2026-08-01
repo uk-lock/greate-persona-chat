@@ -91,7 +91,7 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
   return (
     <div className="flex flex-1 flex-col">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-surface-border bg-background/95 px-8 py-4">
-        <h1 className="font-display text-lg text-gold">{chatDetail.title}</h1>
+        <h1 className="font-display text-lg font-bold text-heading">{chatDetail.title}</h1>
         <div className="flex items-center gap-2">
           {chatDetail.participants.map((participant, index) =>
             participant.type === "USER" ? (
@@ -150,7 +150,7 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
               type="button"
               onClick={handleSend}
               disabled={isGenerating || inputValue.trim().length === 0}
-              className="rounded-sm border border-gold bg-wine px-5 py-2 text-sm text-foreground hover:bg-wine-bright disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-sm border border-gold bg-wine px-5 py-2 text-sm text-on-accent hover:bg-wine-bright disabled:cursor-not-allowed disabled:opacity-60"
             >
               送信
             </button>
@@ -169,7 +169,7 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
               type="button"
               onClick={handleStart}
               disabled={isGenerating}
-              className="rounded-sm border border-gold bg-wine px-5 py-2 text-sm text-foreground hover:bg-wine-bright disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-sm border border-gold bg-wine px-5 py-2 text-sm text-on-accent hover:bg-wine-bright disabled:cursor-not-allowed disabled:opacity-60"
             >
               開始
             </button>
@@ -229,7 +229,7 @@ const MessageBubble = ({
         className={`max-w-lg whitespace-pre-wrap rounded-md px-4 py-2 text-sm ${
           isUser
             ? "bg-wine/50 text-foreground"
-            : "border border-surface-border bg-surface/60 text-foreground"
+            : "border border-surface-border bg-surface text-foreground"
         }`}
       >
         {message.message}

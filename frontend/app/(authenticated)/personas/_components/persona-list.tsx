@@ -45,7 +45,7 @@ export const PersonaList = ({ personas }: Props) => {
             <li key={persona.id}>
               <Link
                 href={`/personas/${persona.id}`}
-                className="flex h-full flex-col gap-3 rounded-md border border-surface-border bg-surface/60 p-4 transition-colors hover:border-gold"
+                className="flex h-full flex-col gap-3 rounded-md border border-surface-border bg-surface p-4 transition-colors hover:border-gold"
               >
                 {persona.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element -- 外部URL（Wikimedia Commons等）を再ホストせずそのまま表示する方針（20260728 steering参照）

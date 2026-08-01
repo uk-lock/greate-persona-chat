@@ -22,7 +22,9 @@ from app.services.exceptions import UnauthorizedError
 from app.services.persona_service import PersonaService
 
 _engine = create_async_engine(
-    str(make_url(settings.database_url).set(drivername="postgresql+asyncpg"))
+    make_url(settings.database_url)
+    .set(drivername="postgresql+asyncpg")
+    .render_as_string(hide_password=False)
 )
 _session_factory = async_sessionmaker(_engine, expire_on_commit=False)
 

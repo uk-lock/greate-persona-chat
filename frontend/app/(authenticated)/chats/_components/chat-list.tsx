@@ -48,7 +48,7 @@ export const ChatList = ({ initialChats }: Props) => {
         {chats.map((chat) => (
           <li
             key={chat.chat_id}
-            className="flex items-center justify-between gap-4 rounded-sm border border-surface-border bg-surface/60 px-5 py-4"
+            className="flex items-center justify-between gap-4 rounded-sm border border-surface-border bg-surface px-5 py-4"
           >
             <div className="flex flex-col gap-2">
               <p className="font-display text-lg text-foreground">{chat.title}</p>
@@ -71,7 +71,7 @@ export const ChatList = ({ initialChats }: Props) => {
                 type="button"
                 aria-label={`${chat.title}を削除`}
                 onClick={() => setPendingDeleteId(chat.chat_id)}
-                className="flex h-9 w-9 items-center justify-center rounded-sm text-muted hover:bg-surface hover:text-danger-text"
+                className="flex h-9 w-9 items-center justify-center rounded-sm text-muted hover:bg-danger-bg hover:text-danger-text"
               >
                 <DeleteIcon />
               </button>
@@ -109,7 +109,7 @@ export const ChatList = ({ initialChats }: Props) => {
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
-                className="rounded-sm border border-gold bg-wine px-4 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-sm border border-gold bg-wine px-4 py-2 text-sm text-on-accent disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isDeleting ? "削除中…" : "OK"}
               </button>

@@ -29,8 +29,10 @@ if config.config_file_name is not None:
 
 target_metadata: sqlalchemy.MetaData = Base.metadata
 
-DATABASE_URL: str = str(
-    make_url(settings.database_url).set(drivername="postgresql+asyncpg")
+DATABASE_URL: str = (
+    make_url(settings.database_url)
+    .set(drivername="postgresql+asyncpg")
+    .render_as_string(hide_password=False)
 )
 
 

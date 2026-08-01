@@ -1,17 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #15110d;
-  --foreground: #eae1d1;
-  --surface: #1d1712;
-  --surface-border: #3a2f22;
-  --wine: #7a2333;
-  --wine-bright: #9c3247;
-  --gold: #c9a24b;
-  --muted: #a8987d;
-  --danger-bg: #2a1414;
-  --danger-border: #6b2b2b;
-  --danger-text: #e8b4b4;
+  --background: #ffffff;
+  --foreground: #14100c;
+  --surface: #f7f3ec;
+  --surface-border: #e4dbc9;
+  --wine: #9c2242;
+  --wine-bright: #c1294f;
+  --gold: #b45309;
+  --heading: #16233f;
+  --muted: #4a4238;
+  --on-accent: #fffaf3;
+  --danger-bg: #fdecec;
+  --danger-border: #f3b6b6;
+  --danger-text: #b42318;
 }
 
 @theme inline {
@@ -22,16 +24,19 @@
   --color-wine: var(--wine);
   --color-wine-bright: var(--wine-bright);
   --color-gold: var(--gold);
+  --color-heading: var(--heading);
   --color-muted: var(--muted);
+  --color-on-accent: var(--on-accent);
   --color-danger-bg: var(--danger-bg);
   --color-danger-border: var(--danger-border);
   --color-danger-text: var(--danger-text);
-  --font-display: var(--font-cinzel), var(--font-shippori-mincho), serif;
-  --font-body: var(--font-eb-garamond), var(--font-noto-serif-jp), serif;
+  --font-display: var(--font-zen-kaku-gothic-new), sans-serif;
+  --font-body: var(--font-noto-sans-jp), sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-body), Georgia, serif;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-weight: 500;
 }

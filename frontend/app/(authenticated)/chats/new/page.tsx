@@ -24,7 +24,7 @@ const NewChatPage = async ({ searchParams }: Props) => {
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-8 py-10">
-      <h1 className="font-display text-2xl tracking-wide text-gold">新規チャット</h1>
+      <h1 className="font-display text-2xl font-bold tracking-wide text-heading">新規チャット</h1>
       <PersonaSelector personas={personas} initialSelectedId={initialSelectedId} />
     </div>
   );

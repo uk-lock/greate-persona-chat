@@ -130,7 +130,7 @@ export const PersonaSelector = ({ personas, initialSelectedId }: Props) => {
                   className={`relative flex w-full flex-col gap-2 rounded-md border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                     isSelected
                       ? "border-gold bg-wine/40"
-                      : "border-surface-border bg-surface/60 hover:border-gold"
+                      : "border-surface-border bg-surface hover:border-gold"
                   }`}
                 >
                   {isSelected && (
@@ -192,7 +192,7 @@ export const PersonaSelector = ({ personas, initialSelectedId }: Props) => {
         type="button"
         disabled={!canSubmit}
         onClick={handleSubmit}
-        className="self-start rounded-sm border border-gold bg-wine px-6 py-2.5 font-display tracking-widest text-foreground transition-colors hover:bg-wine-bright disabled:cursor-not-allowed disabled:opacity-60"
+        className="self-start rounded-sm border border-gold bg-wine px-6 py-2.5 font-display tracking-widest text-on-accent transition-colors hover:bg-wine-bright disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "作成中…" : "チャット開始"}
       </button>

@@ -85,7 +85,7 @@ export const SignupForm = () => {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="mt-2 rounded-sm border border-gold bg-wine py-2.5 font-display tracking-widest text-foreground transition-colors hover:bg-wine-bright disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-2 rounded-sm border border-gold bg-wine py-2.5 font-display tracking-widest text-on-accent transition-colors hover:bg-wine-bright disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "登録中…" : "サインアップ"}
       </button>

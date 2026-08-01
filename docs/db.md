@@ -34,7 +34,7 @@
 | summary | TEXT |  |  | 概要 |
 | description | TEXT |  |  | 詳細説明 |
 | personality | TEXT |  |  | 性格 |
-| biography | TEXT |  |  | 経歴 |
+| biography | JSONB |  |  | 経歴（年表） |
 | sample_quotes | JSONB |  |  | 発言例（文字列配列） |
 | is_deleted | BOOLEAN | ○ |  | 論理削除フラグ |
 | created_at | DATETIME | ○ |  | 作成日時 |
@@ -44,6 +44,7 @@
 
 ### 備考
 
+- `biography` は `[{"year": 1780, "event": "XXXをした"}, ...]` のような、年（`year`：数値）と出来事（`event`：文字列）を持つオブジェクト配列のJSONを想定する。
 - `sample_quotes` は `["発言例1", "発言例2", ...]` のような文字列配列のJSONを想定する。
 - `image_url` が `NULL` の場合、画面側でデフォルトのプレースホルダー画像を表示する。
 

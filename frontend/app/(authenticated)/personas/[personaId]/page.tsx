@@ -14,6 +14,7 @@ const PersonaDetailPage = async ({ params }: Props) => {
   const persona = await fetchPersona(Number(personaId), getAuthCookieHeader(cookieStore));
 
   const basicInfo = [persona.country, persona.era].filter(Boolean).join("・");
+  const hasBiography = persona.biography !== null && persona.biography.length > 0;
   const hasQuotes = persona.sample_quotes !== null && persona.sample_quotes.length > 0;
 
   return (
@@ -24,7 +25,7 @@ const PersonaDetailPage = async ({ params }: Props) => {
         </Link>
         <Link
           href={`/chats/new?persona_id=${persona.id}`}
-          className="rounded-sm border border-gold bg-wine px-5 py-2 font-display text-sm tracking-wide text-foreground hover:bg-wine-bright"
+          className="rounded-sm border border-gold bg-wine px-5 py-2 font-display text-sm tracking-wide text-on-accent hover:bg-wine-bright"
         >
           チャットを始める
         </Link>
@@ -47,41 +48,50 @@ const PersonaDetailPage = async ({ params }: Props) => {
               {persona.name.slice(0, 1)}
             </span>
           )}
-          <h1 className="font-display text-3xl tracking-wide text-gold">{persona.name}</h1>
+          <h1 className="font-display text-3xl font-bold tracking-wide text-heading">
+            {persona.name}
+          </h1>
           {basicInfo && <p className="text-sm text-muted">{basicInfo}</p>}
         </div>
 
         {persona.summary && (
           <section className="flex flex-col gap-2">
-            <h2 className="font-display text-lg text-gold">概要</h2>
+            <h2 className="font-display text-lg font-bold text-heading">概要</h2>
             <p className="whitespace-pre-wrap text-foreground">{persona.summary}</p>
           </section>
         )}
 
         {persona.description && (
           <section className="flex flex-col gap-2">
-            <h2 className="font-display text-lg text-gold">詳細説明</h2>
+            <h2 className="font-display text-lg font-bold text-heading">詳細説明</h2>
             <p className="whitespace-pre-wrap text-foreground">{persona.description}</p>
           </section>
         )}
 
         {persona.personality && (
           <section className="flex flex-col gap-2">
-            <h2 className="font-display text-lg text-gold">性格</h2>
+            <h2 className="font-display text-lg font-bold text-heading">性格</h2>
             <p className="whitespace-pre-wrap text-foreground">{persona.personality}</p>
           </section>
         )}
 
-        {persona.biography && (
+        {hasBiography && (
           <section className="flex flex-col gap-2">
-            <h2 className="font-display text-lg text-gold">経歴</h2>
-            <p className="whitespace-pre-wrap text-foreground">{persona.biography}</p>
+            <h2 className="font-display text-lg font-bold text-heading">経歴</h2>
+            <ul className="flex flex-col gap-2">
+              {persona.biography?.map((entry, index) => (
+                <li key={index} className="flex gap-3 text-foreground">
+                  <span className="shrink-0 text-muted">{entry.year}</span>
+                  <span className="whitespace-pre-wrap">{entry.event}</span>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 
         {hasQuotes && (
           <section className="flex flex-col gap-3">
-            <h2 className="font-display text-lg text-gold">発言例</h2>
+            <h2 className="font-display text-lg font-bold text-heading">発言例</h2>
             <ul className="flex flex-col gap-3">
               {persona.sample_quotes?.map((quote, index) => (
                 <li

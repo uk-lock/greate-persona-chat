@@ -1,3 +1,9 @@
+/** biographyの年表1件分。 */
+export type BiographyEntry = {
+  year: number;
+  event: string;
+};
+
 /** `GET /personas/{persona_id}`のレスポンス（api.md参照）。 */
 export type PersonaDetail = {
   id: number;
@@ -8,6 +14,6 @@ export type PersonaDetail = {
   summary: string | null;
   description: string | null;
   personality: string | null;
-  biography: string | null;
+  biography: BiographyEntry[] | null;
   sample_quotes: string[] | null;
 };

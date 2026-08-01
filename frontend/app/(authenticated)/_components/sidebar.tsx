@@ -78,26 +78,46 @@ const navItems: NavItem[] = [
 ];
 
 const navLinkClassName =
-  "flex h-11 w-11 items-center justify-center rounded-sm text-muted transition-colors hover:bg-surface hover:text-gold";
+  "flex h-11 shrink-0 items-center gap-3 rounded-sm px-3 text-muted transition-colors hover:bg-surface hover:text-gold";
+
+const navIconClassName = "flex h-5 w-5 shrink-0 items-center justify-center";
+
+const navLabelClassName =
+  "whitespace-nowrap text-sm opacity-0 transition-opacity duration-100 group-hover:opacity-100 group-hover:duration-200 group-hover:delay-100";
 
 /** S01〜S05共通のサイドバー（screen-list.md 3節）。
  *
- * 通常時はアイコンのみ表示し、`title`属性によりhover時にラベルを表示する。
+ * 通常時はアイコン幅のみで表示する。実体は絶対配置のオーバーレイにしてあり、
+ * マウスが乗ったときだけ幅とラベルが広がる。外側の枠は常に64px幅を確保する
+ * ため、展開してもmain側のレイアウト幅は変化しない。
  */
 export const Sidebar = () => {
   return (
-    <nav className="flex w-16 flex-col items-center gap-2 border-r border-surface-border bg-surface/60 py-6">
-      {navItems.map(({ href, label, Icon }) => (
-        <Link key={href} href={href} title={label} aria-label={label} className={navLinkClassName}>
-          <Icon />
-        </Link>
-      ))}
+    <div className="group relative w-16 shrink-0">
+      <nav className="absolute inset-y-0 left-0 z-20 flex w-16 flex-col gap-2 overflow-hidden border-r border-surface-border bg-background py-6 transition-[width] duration-200 ease-out group-hover:w-52 group-hover:shadow-xl group-hover:shadow-black/10">
+        {navItems.map(({ href, label, Icon }) => (
+          <Link key={href} href={href} title={label} aria-label={label} className={navLinkClassName}>
+            <span className={navIconClassName}>
+              <Icon />
+            </span>
+            <span className={navLabelClassName}>{label}</span>
+          </Link>
+        ))}
 
-      <form action={logoutAction} className="mt-auto">
-        <button type="submit" title="ログアウト" aria-label="ログアウト" className={navLinkClassName}>
-          <LogoutIcon />
-        </button>
-      </form>
-    </nav>
+        <form action={logoutAction} className="mt-auto">
+          <button
+            type="submit"
+            title="ログアウト"
+            aria-label="ログアウト"
+            className={`${navLinkClassName} w-full`}
+          >
+            <span className={navIconClassName}>
+              <LogoutIcon />
+            </span>
+            <span className={navLabelClassName}>ログアウト</span>
+          </button>
+        </form>
+      </nav>
+    </div>
   );
 };

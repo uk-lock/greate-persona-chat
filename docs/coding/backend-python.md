@@ -175,7 +175,7 @@ backend/app/
 ├── services/      … ユースケース＋ドメインロジック（サービス層）
 ├── models/        … SQLAlchemyモデル（テーブル定義）
 ├── repositories/  … DB操作（クエリ・永続化処理）
-└── llm/           … LLM APIクライアント
+└── llm/           … LLM呼び出し（LangGraphのグラフ・ノード定義。13節参照）
 ```
 
 ### 理由
@@ -268,20 +268,24 @@ EXCEPTION_STATUS_MAP: dict[type[AppError], int] = {
 
 ---
 
-## 13. 外部APIアクセス（LLM APIクライアント）
+## 13. 外部APIアクセス（LLM呼び出し）
 
 **状態：確定**
 
 ### ルール
 
-- Python SDKの**非同期クライアント**を使い、`app/llm/`に薄いラッパーを置く。ストリーミングはSDKの`stream=True`をそのままサービス層へ渡す。独自HTTPクライアントでの再実装はしない。
-- 具体的なパッケージ名・バージョンは**未確定**。実装時に確定する。
-- タイムアウト・5xx・429（レート制限）等の一時的なエラーに対しては、`tenacity`で少数回（目安2回程度）の再試行＋指数バックオフを行う。4xxクライアントエラー（不正リクエスト等）は再試行しない。
+- ペルソナ応答生成・応答ペルソナ選択（連鎖発言の継続判断を含む）・チャットタイトル自動生成は、**LangGraph**の`StateGraph`（`app/llm/graph.py`）として実装する。「話者選択→応答生成→タイトル更新→（継続判定）」という循環をグラフのサイクルとして表現し、PERSONA_ONLYの自動進行とUSER_PARTICIPATEDの連鎖発言は同じグラフ構造を共有する。
+- チャットモデルの呼び出しは**特定のLLMプロバイダに依存しない**構成にする。`langchain`の`init_chat_model`（`app/llm/models.py`）を使い、`app.config.settings`側で`プロバイダ名:モデル名`形式の文字列（例：`openai:gpt-5-mini`）としてモデルを指定する。プロバイダを追加・変更する場合も、対応するLangChain連携パッケージ（`langchain-openai`・`langchain-anthropic`等）を`requirements/requirements.txt`に追加し、設定値の文字列を変えるだけで済むようにする。構造化出力が必要な箇所（応答ペルソナ選択・タイトル生成）は`with_structured_output`を使う。
+- APIキーはプロバイダごとに`app.config.settings`へoptionalなフィールドとして追加する（例：`openai_api_key`）。全プロバイダ分を先回りして定義せず、実際に使うプロバイダが増えた時点で追加する（10節と同じYAGNIの考え方）。`app/llm/models.py`内の対応表（プロバイダ名→APIキー）もあわせて拡張する。
+- リクエストスコープの依存（クライアント切断検知用の`Request`・ターン数上限・停止フラグ確認）は、LangGraphのRuntime Context API（`context_schema`・`Runtime[ChatRunContext]`）で各ノードへ注入する。チャットモデル自体はリクエストをまたいで共通のため、グラフ構築時にノードのクロージャとして注入する（`app/llm/models.py`）。
+- 依存パッケージのバージョンは`requirements/requirements.txt`で固定する（`langgraph`・`langchain`・`langchain-openai`・`langchain-core`・`openai`等、利用するプロバイダの連携パッケージを含む）。
+- タイムアウト・5xx・429（レート制限）等の一時的なエラーに対しては、LangGraphのノード単位`RetryPolicy`（`app/llm/retry.py`）で少数回の再試行＋指数バックオフを行う。4xxクライアントエラー（不正リクエスト等）は再試行しない。各チャットモデル自体のリトライ（`max_retries`）は無効化し、リトライ責務を`RetryPolicy`に一本化する。
 
 ### 理由
 
-- 公式SDKは非同期・ストリーミングとも標準サポートしており、車輪の再発明を避けられる。
-- 外部API呼び出しの一時的な失敗は珍しくなく、軽量な再試行（`tenacity`）は費用対効果が高い。恒久的なエラー（4xx）まで再試行するのは無駄なリトライを招くため対象外とする。
+- 「話者選択→応答生成→タイトル更新」は本質的に循環のあるフローであり、LangGraphの`StateGraph`はこの種のループを自然に表現できる。素のSDK呼び出し＋手書きループより、PERSONA_ONLYとUSER_PARTICIPATEDでグラフ構造を共有しやすい（ユーザー判断により、当初想定していた「OpenAI公式SDKを直接使う薄いラッパー」方針から変更した）。
+- 対話生成にはOpenAI APIを使う想定で始めたが、将来的に他社モデルも使う可能性があるため（ユーザー判断）、`init_chat_model`によりプロバイダの切り替えを設定値の変更だけで完結させ、`app/llm/`の呼び出し側コード（`graph.py`・`nodes.py`）がプロバイダを意識しないようにする。
+- 外部API呼び出しの一時的な失敗は珍しくなく、軽量な再試行は費用対効果が高い。恒久的なエラー（4xx）まで再試行するのは無駄なリトライを招くため対象外とする。LangGraphの`RetryPolicy`はノード単位のリトライを標準機能として提供しており、`tenacity`を別途導入する必要がない。
 
 ### 関連事項（対象外）
 

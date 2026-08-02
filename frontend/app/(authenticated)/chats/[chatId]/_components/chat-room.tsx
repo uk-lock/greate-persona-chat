@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { stopChatAction } from "../_actions";
 import { MessageStreamError, startMessageStream } from "../_sse";
-import type { ChatDetail, ChatMessage, Participant } from "../_types";
+import type { ChatDetail, ChatMessage, ChatStreamEvent, Participant } from "../_types";
 
 type Props = {
   chatId: string;
@@ -16,7 +16,9 @@ const MESSAGE_MAX_LENGTH = 500;
 /** S03 チャット画面の本体（Client Component）。メッセージ送受信・SSE購読・状態遷移を管理する。 */
 export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [title, setTitle] = useState(chatDetail.title);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [thinkingPersonaId, setThinkingPersonaId] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -26,6 +28,25 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const handleStreamEvent = (event: ChatStreamEvent) => {
+    switch (event.type) {
+      case "thinking":
+        setThinkingPersonaId(event.persona_id);
+        break;
+      case "message":
+        setMessages((prev) => [...prev, event.message]);
+        setThinkingPersonaId(null);
+        break;
+      case "title":
+        setTitle(event.title);
+        break;
+      case "error":
+        setFormError(event.message);
+        setThinkingPersonaId(null);
+        break;
+    }
+  };
+
   const runStream = async (body: { message?: string }) => {
     setFormError(null);
     setIsGenerating(true);
@@ -33,9 +54,7 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
     abortControllerRef.current = controller;
 
     try {
-      await startMessageStream(chatId, body, controller.signal, (message) => {
-        setMessages((prev) => [...prev, message]);
-      });
+      await startMessageStream(chatId, body, controller.signal, handleStreamEvent);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         // ユーザーが停止操作を行った場合。エラー表示はしない。
@@ -46,6 +65,7 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
       }
     } finally {
       setIsGenerating(false);
+      setThinkingPersonaId(null);
       abortControllerRef.current = null;
     }
   };
@@ -91,7 +111,7 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
   return (
     <div className="flex flex-1 flex-col">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-surface-border bg-background/95 px-8 py-4">
-        <h1 className="font-display text-lg font-bold text-heading">{chatDetail.title}</h1>
+        <h1 className="font-display text-lg font-bold text-heading">{title}</h1>
         <div className="flex items-center gap-2">
           {chatDetail.participants.map((participant, index) =>
             participant.type === "USER" ? (
@@ -119,7 +139,9 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
         )}
         {isGenerating && (
           <p className="text-sm text-muted" aria-live="polite">
-            …
+            {thinkingPersonaId !== null
+              ? `${findParticipant(thinkingPersonaId)?.name ?? ""}が考え中…`
+              : "…"}
           </p>
         )}
         <div ref={bottomRef} />

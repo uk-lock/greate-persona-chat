@@ -10,6 +10,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import constants, settings
+from app.llm.graph import ChatGraph, build_chat_graph
 from app.models.user import User
 from app.repositories.chat_message_repository import ChatMessageRepository
 from app.repositories.chat_persona_repository import ChatPersonaRepository
@@ -27,6 +28,7 @@ _engine = create_async_engine(
     .render_as_string(hide_password=False)
 )
 _session_factory = async_sessionmaker(_engine, expire_on_commit=False)
+_chat_graph = build_chat_graph()
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -81,6 +83,10 @@ def get_persona_service(
     return PersonaService(persona_repository)
 
 
+def get_chat_graph() -> ChatGraph:
+    return _chat_graph
+
+
 def get_chat_service(
     chat_repository: ChatRepository = Depends(get_chat_repository),
     chat_persona_repository: ChatPersonaRepository = Depends(
@@ -90,12 +96,14 @@ def get_chat_service(
         get_chat_message_repository
     ),
     persona_repository: PersonaRepository = Depends(get_persona_repository),
+    chat_graph: ChatGraph = Depends(get_chat_graph),
 ) -> ChatService:
     return ChatService(
         chat_repository,
         chat_persona_repository,
         chat_message_repository,
         persona_repository,
+        chat_graph,
     )
 
 

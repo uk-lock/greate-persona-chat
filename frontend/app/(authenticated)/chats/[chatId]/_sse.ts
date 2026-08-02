@@ -1,4 +1,4 @@
-import type { ChatMessage } from "./_types";
+import type { ChatStreamEvent } from "./_types";
 
 /** バッファを`\n\n`区切りのSSEイベント群と、まだ完結していない残り部分に分割する。 */
 export const splitSseFrames = (buffer: string): { frames: string[]; remainder: string } => {
@@ -7,24 +7,24 @@ export const splitSseFrames = (buffer: string): { frames: string[]; remainder: s
   return { frames: parts, remainder };
 };
 
-/** SSEの1イベント（`data: {...}`形式）からChatMessageを取り出す。dataフレームでなければnull。 */
-export const parseSseFrame = (frame: string): ChatMessage | null => {
+/** SSEの1イベント（`data: {...}`形式）からChatStreamEventを取り出す。dataフレームでなければnull。 */
+export const parseSseFrame = (frame: string): ChatStreamEvent | null => {
   const dataLine = frame.split("\n").find((line) => line.startsWith("data: "));
   if (!dataLine) {
     return null;
   }
-  return JSON.parse(dataLine.slice("data: ".length)) as ChatMessage;
+  return JSON.parse(dataLine.slice("data: ".length)) as ChatStreamEvent;
 };
 
-/** SSEレスポンスのReaderを読み進め、受信したメッセージを逐次`onMessage`へ渡す。
+/** SSEレスポンスのReaderを読み進め、受信したイベントを逐次`onEvent`へ渡す。
  *
- * バックエンドの各SSEイベントは常に1件の完成したメッセージであり（モックLLMが
- * トークン単位のストリーミングを行わないため）、文字単位のタイピング演出は行わない。
- * 「チャンクを逐次追記して表示する」は、メッセージ単位での逐次追加として実装する。
+ * バックエンドの`message`イベントは常に1件の完成した発言であり、トークン単位の
+ * ストリーミングは行わない。応答生成中であることは`thinking`イベントで示す
+ * （呼び出し側〈chat-room.tsx〉がイベント種別ごとに表示を出し分ける）。
  */
 export const consumeSseStream = async (
   reader: ReadableStreamDefaultReader<Uint8Array>,
-  onMessage: (message: ChatMessage) => void,
+  onEvent: (event: ChatStreamEvent) => void,
 ): Promise<void> => {
   const decoder = new TextDecoder();
   let buffer = "";
@@ -37,9 +37,9 @@ export const consumeSseStream = async (
     const { frames, remainder } = splitSseFrames(buffer);
     buffer = remainder;
     for (const frame of frames) {
-      const message = parseSseFrame(frame);
-      if (message) {
-        onMessage(message);
+      const event = parseSseFrame(frame);
+      if (event) {
+        onEvent(event);
       }
     }
   }
@@ -61,7 +61,7 @@ export const startMessageStream = async (
   chatId: string,
   body: MessageStreamBody,
   signal: AbortSignal,
-  onMessage: (message: ChatMessage) => void,
+  onEvent: (event: ChatStreamEvent) => void,
 ): Promise<void> => {
   const response = await fetch(`/api/chats/${chatId}/messages`, {
     method: "POST",
@@ -78,5 +78,5 @@ export const startMessageStream = async (
   if (!response.body) {
     return;
   }
-  await consumeSseStream(response.body.getReader(), onMessage);
+  await consumeSseStream(response.body.getReader(), onEvent);
 };

@@ -23,11 +23,15 @@ backend/data/init_persona.jsonの各要素はm_persona（docs/db.md参照）に�
     "summary": "string",
     "description": "string",
     "personality": "string",
+    "conversation_policy": "string",
     "biography": [{"year": 1780, "event": "string"}, "..."],
     "sample_quotes": ["string", "..."]
   }
 ]
 ```
+
+`conversation_policy`は会話のポジション・語尾等の会話生成向け方針をフリーテキストで
+持たせる項目で、フロント側の画面には表示しない（LLMのプロンプト構築にのみ使う）。
 
 ペルソナは逐次追加していく想定のため、同名（name）のペルソナが既に登録済みの場合は
 スキップする（べき等。nameにDB上の一意制約はないため簡易的なチェックに留まる）。
@@ -147,6 +151,7 @@ async def insert_init_persona(session: AsyncSession) -> None:
             summary=entry.get("summary"),
             description=entry.get("description"),
             personality=entry.get("personality"),
+            conversation_policy=entry.get("conversation_policy"),
             biography=entry.get("biography"),
             sample_quotes=entry.get("sample_quotes"),
             created_by=_CREATED_BY,

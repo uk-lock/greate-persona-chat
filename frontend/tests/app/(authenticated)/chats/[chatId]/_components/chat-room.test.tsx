@@ -72,8 +72,8 @@ describe("ChatRoom", () => {
   });
 
   test("送信するとstartMessageStreamを呼び、受信したメッセージを吹き出しとして追加する", async () => {
-    mockedStartMessageStream.mockImplementationOnce(async (_chatId, _body, _signal, onMessage) => {
-      onMessage(replyMessage);
+    mockedStartMessageStream.mockImplementationOnce(async (_chatId, _body, _signal, onEvent) => {
+      onEvent({ type: "message", message: replyMessage });
     });
     const user = userEvent.setup();
     render(<ChatRoom chatId={CHAT_ID} chatDetail={userParticipatedChat} initialMessages={[]} />);
@@ -147,6 +147,51 @@ describe("ChatRoom", () => {
     expect(
       await screen.findByText("リクエストが多すぎます。しばらくしてから再度お試しください。"),
     ).toBeInTheDocument();
+  });
+
+  test("thinkingイベント受信時は対象ペルソナ名で考え中であることを表示する", async () => {
+    mockedStartMessageStream.mockImplementationOnce(
+      () =>
+        new Promise(() => {
+          // 意図的に解決しない（生成中の状態を維持したままアサーションする）
+        }),
+    );
+    const user = userEvent.setup();
+    render(<ChatRoom chatId={CHAT_ID} chatDetail={userParticipatedChat} initialMessages={[]} />);
+
+    await user.type(screen.getByPlaceholderText("メッセージを入力"), "こんにちは");
+    await user.click(screen.getByRole("button", { name: "送信" }));
+
+    const onEvent = mockedStartMessageStream.mock.calls[0][3];
+    onEvent({ type: "thinking", persona_id: 10 });
+
+    expect(await screen.findByText("織田信長が考え中…")).toBeInTheDocument();
+  });
+
+  test("titleイベント受信時はヘッダーのタイトル表示を更新する", async () => {
+    mockedStartMessageStream.mockImplementationOnce(async (_chatId, _body, _signal, onEvent) => {
+      onEvent({ type: "title", title: "本能寺のこと" });
+    });
+    const user = userEvent.setup();
+    render(<ChatRoom chatId={CHAT_ID} chatDetail={userParticipatedChat} initialMessages={[]} />);
+
+    await user.type(screen.getByPlaceholderText("メッセージを入力"), "こんにちは");
+    await user.click(screen.getByRole("button", { name: "送信" }));
+
+    expect(await screen.findByText("本能寺のこと")).toBeInTheDocument();
+  });
+
+  test("ストリーム中にerrorイベントを受信した場合はエラーメッセージを表示する", async () => {
+    mockedStartMessageStream.mockImplementationOnce(async (_chatId, _body, _signal, onEvent) => {
+      onEvent({ type: "error", message: "応答の生成に失敗しました" });
+    });
+    const user = userEvent.setup();
+    render(<ChatRoom chatId={CHAT_ID} chatDetail={userParticipatedChat} initialMessages={[]} />);
+
+    await user.type(screen.getByPlaceholderText("メッセージを入力"), "こんにちは");
+    await user.click(screen.getByRole("button", { name: "送信" }));
+
+    expect(await screen.findByText("応答の生成に失敗しました")).toBeInTheDocument();
   });
 
   test("初期メッセージを発言者ごとに左右寄せで表示する", () => {

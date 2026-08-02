@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.services.exceptions import (
     AppError,
     ConflictError,
+    ExternalServiceError,
     ForbiddenError,
     NotFoundError,
     UnauthorizedError,
@@ -22,6 +23,7 @@ EXCEPTION_STATUS_MAP: dict[type[AppError], int] = {
     UserLockedError: 423,
     ForbiddenError: 403,
     ValidationError: 400,
+    ExternalServiceError: 502,
 }
 """業務例外クラスとHTTPステータスコードの対応表（backend-python.md 10節）。"""
 

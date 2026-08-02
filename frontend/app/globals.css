@@ -3,14 +3,14 @@
 :root {
   --background: #ffffff;
   --foreground: #14100c;
-  --surface: #f7f3ec;
-  --surface-border: #e4dbc9;
-  --wine: #9c2242;
-  --wine-bright: #c1294f;
-  --gold: #b45309;
+  --surface: #f8fafc;
+  --surface-border: #e2e8f0;
+  --wine: #0369a1;
+  --wine-bright: #0284c7;
+  --gold: #0284c7;
   --heading: #16233f;
-  --muted: #4a4238;
-  --on-accent: #fffaf3;
+  --muted: #64748b;
+  --on-accent: #f8fafc;
   --danger-bg: #fdecec;
   --danger-border: #f3b6b6;
   --danger-text: #b42318;

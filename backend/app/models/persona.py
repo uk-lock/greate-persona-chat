@@ -32,6 +32,7 @@ class Persona(AuditMixin, Base):
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     personality: Mapped[str | None] = mapped_column(Text, nullable=True)
+    conversation_policy: Mapped[str | None] = mapped_column(Text, nullable=True)
     biography: Mapped[list[BiographyEntry] | None] = mapped_column(JSONB, nullable=True)
     sample_quotes: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
 

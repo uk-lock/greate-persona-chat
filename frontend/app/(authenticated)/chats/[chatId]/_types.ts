@@ -17,7 +17,7 @@ export type ChatDetail = {
   participants: Participant[];
 };
 
-/** `GET /chats/{chat_id}/messages`の1件、およびSSEイベント1件分（api.md参照）。 */
+/** `GET /chats/{chat_id}/messages`の1件（api.md参照）。 */
 export type ChatMessage = {
   id: number;
   sort_no: number;
@@ -26,3 +26,10 @@ export type ChatMessage = {
   message: string;
   created_at: string;
 };
+
+/** `POST /chats/{chat_id}/messages`のSSEイベント（判別ユニオン。api.md参照）。 */
+export type ChatStreamEvent =
+  | { type: "thinking"; persona_id: number }
+  | { type: "message"; message: ChatMessage }
+  | { type: "title"; title: string }
+  | { type: "error"; message: string };

@@ -34,6 +34,7 @@
 | summary | TEXT |  |  | 概要 |
 | description | TEXT |  |  | 詳細説明 |
 | personality | TEXT |  |  | 性格 |
+| conversation_policy | TEXT |  |  | 会話方針（会話でのポジション・語尾等） |
 | biography | JSONB |  |  | 経歴（年表） |
 | sample_quotes | JSONB |  |  | 発言例（文字列配列） |
 | is_deleted | BOOLEAN | ○ |  | 論理削除フラグ |
@@ -44,6 +45,9 @@
 
 ### 備考
 
+- `conversation_policy` はその人物がどんな会話のポジション・語尾等で話すかを表す自由テキストで、
+  LLMの応答生成プロンプトにのみ使う内部項目。ペルソナ一覧・詳細のAPIレスポンスには含めず、
+  フロント側の画面にも表示しない（[api.md](./api.md) Personas節参照）。
 - `biography` は `[{"year": 1780, "event": "XXXをした"}, ...]` のような、年（`year`：数値）と出来事（`event`：文字列）を持つオブジェクト配列のJSONを想定する。
 - `sample_quotes` は `["発言例1", "発言例2", ...]` のような文字列配列のJSONを想定する。
 - `image_url` が `NULL` の場合、画面側でデフォルトのプレースホルダー画像を表示する。

@@ -105,6 +105,17 @@ POST /chats/{chat_id}/messages
 - `USER_PARTICIPATED`：リクエストボディのユーザー発言を保存した上で、文脈に応じてLLMが選択したペルソナの応答をSSE（Server-Sent Events）でストリーミング配信する。応答後、LLMが「会話を続けるべき」と判断した場合は、別のペルソナが連鎖して発言することがある（安全弁として連鎖回数の上限を設ける）。「連鎖が自然に終わる」か「上限に達する」か「ユーザが会話を停止させる」と、制御はユーザーに戻る。ユーザー発言の本文は最大500文字とし、空文字は不可（400を返す）。
 - `PERSONA_ONLY`：リクエストボディなし。ペルソナ同士の会話をサーバー側で連続生成し、生成された発言を都度SSEでストリーミング配信し続ける（`stop` が呼ばれるまで継続）。
 
+**SSEイベント**：各イベントは`data: {...}`の1行JSONで、`type`フィールドにより判別する。
+
+| type | 内容 |
+|---|---|
+| `thinking` | 応答ペルソナが選ばれ、生成中であることを示す（`persona_id`を含む）。応答本文はまだ確定していない。 |
+| `message` | ペルソナの発言が1件完成し、保存済みであることを示す（`message`：`GET /chats/{chat_id}/messages`と同じ形式）。 |
+| `title` | チャットタイトルが自動生成・更新されたことを示す（`title`）。最初のペルソナ応答の直後に最大1回のみ配信される。 |
+| `error` | LLM呼び出しが（再試行しても）失敗し、ストリームを終了することを示す（`message`：エラー内容）。 |
+
+トークン単位（文字単位）のストリーミングは行わない。`message`イベントは常に完成した1発言分をまとめて配信する。
+
 **レート制限**：ユーザー単位（全チャット横断）で、直近1分間に10回、1日あたり50回を超える本APIの呼び出しを制限する（悪用・コスト対策。[要件定義書](./requirements-definition.md) 7節参照）。上限超過時は429を返す。
 
 ---
@@ -137,4 +148,4 @@ GET /personas
 GET /personas/{persona_id}
 ```
 
-ペルソナ詳細画面で、指定したペルソナの詳細情報を取得する。レスポンスには `m_persona` の全項目（`id`・`name`・`image_url`・`country`・`era`・`summary`・`description`・`personality`・`biography`・`sample_quotes`）を含める。対象の `persona_id` が存在しない、または論理削除済みの場合は404を返す。
+ペルソナ詳細画面で、指定したペルソナの詳細情報を取得する。レスポンスには `m_persona` の画面表示用項目（`id`・`name`・`image_url`・`country`・`era`・`summary`・`description`・`personality`・`biography`・`sample_quotes`）を含める。`conversation_policy` はLLMの応答生成にのみ使う内部項目のため、レスポンスには含めない（[db.md](./db.md) m_persona参照）。対象の `persona_id` が存在しない、または論理削除済みの場合は404を返す。

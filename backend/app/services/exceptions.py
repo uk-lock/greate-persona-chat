@@ -30,3 +30,7 @@ class ForbiddenError(AppError):
 
 class ValidationError(AppError):
     """DBアクセスを伴う、または文脈依存のためスキーマ層では表現できないバリデーション違反の例外。"""
+
+
+class ExternalServiceError(AppError):
+    """外部API（LLM等）呼び出しが、リトライを使い切っても失敗した場合の例外。"""

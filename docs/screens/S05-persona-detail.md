@@ -77,7 +77,7 @@
 GET /personas/{persona_id}
 ```
 
-画面表示時に取得する。レスポンスには `m_persona` の全項目（`id`・`name`・`image_url`・`country`・`era`・`summary`・`description`・`personality`・`biography`・`sample_quotes`）を含む。対象が存在しない、または削除済みの場合は404を返す（8節・9節参照）。
+画面表示時に取得する。レスポンスには `m_persona` の画面表示用項目（`id`・`name`・`image_url`・`country`・`era`・`summary`・`description`・`personality`・`biography`・`sample_quotes`）を含む。`conversation_policy` はLLM応答生成専用の内部項目のため画面には表示せず、レスポンスにも含めない（[db.md](../db.md) m_persona参照）。対象が存在しない、または削除済みの場合は404を返す（8節・9節参照）。
 
 フィールド名・ステータスコード等の詳細は実装時に確定し、[api.md](../api.md) との整合を取ること。
 

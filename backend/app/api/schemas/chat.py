@@ -88,7 +88,42 @@ class PostMessageRequest(BaseModel):
 
     PERSONA_ONLYモードでは本文なし（`message=None`）で送信される。
     USER_PARTICIPATEDモードでの必須チェックはchat_modeに依存するため
-    サービス層（ChatService.advance_conversation）で行う。
+    サービス層（ChatService.save_user_message）で行う。
     """
 
     message: str | None = Field(default=None, max_length=USER_MESSAGE_MAX_LENGTH)
+
+
+class ThinkingEvent(BaseModel):
+    """ペルソナが選ばれ、応答を生成中であることを示すSSEイベント。"""
+
+    type: Literal["thinking"] = "thinking"
+    persona_id: int
+
+
+class MessageEvent(BaseModel):
+    """ペルソナ・ユーザーの発言が1件完成したことを示すSSEイベント。"""
+
+    type: Literal["message"] = "message"
+    message: ChatMessageResponse
+
+
+class TitleEvent(BaseModel):
+    """チャットタイトルが自動生成・更新されたことを示すSSEイベント。"""
+
+    type: Literal["title"] = "title"
+    title: str
+
+
+class ErrorEvent(BaseModel):
+    """会話進行中にエラーが発生し、ストリームを終了することを示すSSEイベント。"""
+
+    type: Literal["error"] = "error"
+    message: str
+
+
+ChatStreamEvent = Annotated[
+    ThinkingEvent | MessageEvent | TitleEvent | ErrorEvent,
+    Field(discriminator="type"),
+]
+"""`POST /chats/{chat_id}/messages`のSSEイベント（判別ユニオン）。"""

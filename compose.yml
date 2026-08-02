@@ -6,6 +6,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       SIGNUP_ENABLED: ${SIGNUP_ENABLED}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      REPLY_MODEL: ${REPLY_MODEL}
+      SELECTION_MODEL: ${SELECTION_MODEL}
+      TITLE_MODEL: ${TITLE_MODEL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
     depends_on:
       db:
         condition: service_healthy

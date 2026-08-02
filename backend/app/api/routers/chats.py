@@ -1,8 +1,7 @@
 """チャット関連のルーター。"""
 
-import asyncio
 import uuid
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator
 
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import StreamingResponse
@@ -16,17 +15,27 @@ from app.api.rate_limit import limiter
 from app.api.schemas.chat import (
     ChatMessageResponse,
     ChatResponse,
+    ChatStreamEvent,
     CreateChatRequest,
+    ErrorEvent,
+    MessageEvent,
     PersonaParticipant,
     PostMessageRequest,
+    ThinkingEvent,
+    TitleEvent,
     UserParticipant,
 )
 from app.api.schemas.chat import Participant as ParticipantSchema
 from app.config import constants
 from app.models.chat import Chat, ChatMode
-from app.models.chat_message import ChatMessage
 from app.models.user import User
-from app.services.chat_service import ChatService
+from app.services.chat_service import (
+    ChatService,
+    MessageTurnEvent,
+    ThinkingTurnEvent,
+    TitleTurnEvent,
+)
+from app.services.exceptions import ExternalServiceError
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 
@@ -54,43 +63,40 @@ def _build_chat_response(chat: Chat) -> ChatResponse:
     )
 
 
-def _format_sse_event(message: ChatMessage) -> bytes:
-    """ChatMessageをSSEの1イベント（dataフレーム）にシリアライズする。"""
-    payload = ChatMessageResponse.model_validate(message).model_dump_json()
-    return f"data: {payload}\n\n".encode()
+def _format_sse_event(event: ChatStreamEvent) -> bytes:
+    """SSEイベントの1件（dataフレーム）にシリアライズする。"""
+    return f"data: {event.model_dump_json()}\n\n".encode()
 
 
-async def _stream_conversation(
+async def _stream_turns(
     chat_id: int,
     current_user: User,
     chat_mode: ChatMode,
-    first_turn_messages: Sequence[ChatMessage],
     request: Request,
     chat_service: ChatService,
 ) -> AsyncIterator[bytes]:
-    """1ターン目の結果に続けて、PERSONA_ONLYの場合のみ自動進行ループを行う。
+    """ChatService.stream_turnsが発行するイベントをSSEフレームへ変換する。
 
-    USER_PARTICIPATEDは連鎖発言未実装（ChatService.advance_conversation参照）のため
-    1ターンで終了する。PERSONA_ONLYは停止・上限到達・クライアント切断のいずれかまで
-    PERSONA_ONLY_TURN_INTERVAL_SECONDS間隔でターンを繰り返す。
+    LLM呼び出しの失敗（tenacity相当のリトライを使い切った場合。
+    app/llm/retry.py参照）は、ヘッダー送信後のためHTTPステータスには変換できず、
+    `error`イベントとして配信してストリームを終了する。
     """
-    for message in first_turn_messages:
-        yield _format_sse_event(message)
-
-    if chat_mode != ChatMode.PERSONA_ONLY:
-        return
-
-    for _ in range(constants.PERSONA_ONLY_MAX_TURNS_PER_REQUEST - 1):
-        await asyncio.sleep(constants.PERSONA_ONLY_TURN_INTERVAL_SECONDS)
-        if await request.is_disconnected():
-            return
-        if await chat_service.get_is_stopped(chat_id):
-            return
-        next_messages = await chat_service.advance_conversation(
-            chat_id, current_user, None
-        )
-        for message in next_messages:
-            yield _format_sse_event(message)
+    try:
+        async for event in chat_service.stream_turns(
+            chat_id, current_user, chat_mode, request
+        ):
+            if isinstance(event, ThinkingTurnEvent):
+                yield _format_sse_event(ThinkingEvent(persona_id=event.persona.id))
+            elif isinstance(event, MessageTurnEvent):
+                yield _format_sse_event(
+                    MessageEvent(
+                        message=ChatMessageResponse.model_validate(event.message)
+                    )
+                )
+            elif isinstance(event, TitleTurnEvent):
+                yield _format_sse_event(TitleEvent(title=event.title))
+    except ExternalServiceError as exc:
+        yield _format_sse_event(ErrorEvent(message=str(exc)))
 
 
 @router.get("")
@@ -187,10 +193,14 @@ async def post_message(
     current_user: User = Depends(get_current_user),
     chat_service: ChatService = Depends(get_chat_service),
 ) -> StreamingResponse:
-    """会話を1ターン進め、生成されたメッセージをSSE（text/event-stream）で配信する。
+    """会話を進行させ、生成されたイベント（考え中・発言・タイトル更新）をSSE
+    （text/event-stream）で配信する。
 
-    1ターン目はストリーミング開始前に実行し、例外発生時に通常のHTTPエラー
-    レスポンス（404/403/400）として返せるようにする。
+    USER_PARTICIPATEDのユーザー発言保存・チャット存在確認/権限確認はLLM呼び出しを
+    伴わないため、StreamingResponse開始前に実行し、例外を通常のHTTPエラー
+    レスポンス（404/403/400）として返せるようにする。LLM呼び出し自体（話者選択・
+    応答生成・タイトル生成）はストリーム開始後にのみ発生するため、失敗時は
+    `error`イベントとして配信する（`_stream_turns`参照）。
 
     Raises:
         NotFoundError: チャットが存在しない、または論理削除済みの場合（404に変換される）。
@@ -199,18 +209,12 @@ async def post_message(
     """
     internal_chat_id = await chat_service.resolve_internal_id(chat_id)
     chat_mode = await chat_service.get_chat_mode(internal_chat_id, current_user)
-    first_turn_messages = await chat_service.advance_conversation(
-        internal_chat_id, current_user, body.message
-    )
+    if chat_mode == ChatMode.USER_PARTICIPATED:
+        await chat_service.save_user_message(
+            internal_chat_id, current_user, body.message
+        )
     return StreamingResponse(
-        _stream_conversation(
-            internal_chat_id,
-            current_user,
-            chat_mode,
-            first_turn_messages,
-            request,
-            chat_service,
-        ),
+        _stream_turns(internal_chat_id, current_user, chat_mode, request, chat_service),
         media_type="text/event-stream",
     )
 

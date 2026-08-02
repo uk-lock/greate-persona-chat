@@ -20,16 +20,25 @@ describe("splitSseFrames", () => {
 });
 
 describe("parseSseFrame", () => {
-  test("dataフレームからChatMessageを取り出す", () => {
-    const frame = 'data: {"id":1,"sort_no":1,"speaker_type":"USER","persona_id":null,"message":"こんにちは","created_at":"2026-07-30T09:00:00+09:00"}';
+  test("dataフレームからmessageイベントを取り出す", () => {
+    const frame =
+      'data: {"type":"message","message":{"id":1,"sort_no":1,"speaker_type":"USER","persona_id":null,"message":"こんにちは","created_at":"2026-07-30T09:00:00+09:00"}}';
     expect(parseSseFrame(frame)).toEqual({
-      id: 1,
-      sort_no: 1,
-      speaker_type: "USER",
-      persona_id: null,
-      message: "こんにちは",
-      created_at: "2026-07-30T09:00:00+09:00",
+      type: "message",
+      message: {
+        id: 1,
+        sort_no: 1,
+        speaker_type: "USER",
+        persona_id: null,
+        message: "こんにちは",
+        created_at: "2026-07-30T09:00:00+09:00",
+      },
     });
+  });
+
+  test("dataフレームからthinkingイベントを取り出す", () => {
+    const frame = 'data: {"type":"thinking","persona_id":5}';
+    expect(parseSseFrame(frame)).toEqual({ type: "thinking", persona_id: 5 });
   });
 
   test("dataフレームでない場合はnullを返す", () => {
@@ -38,13 +47,13 @@ describe("parseSseFrame", () => {
 });
 
 describe("consumeSseStream", () => {
-  test("複数チャンクにまたがるイベントも正しく読み進めてonMessageへ渡す", async () => {
+  test("複数チャンクにまたがるイベントも正しく読み進めてonEventへ渡す", async () => {
     const encoder = new TextEncoder();
     const chunks = [
-      encoder.encode('data: {"id":1,"sort_no":1,"speaker_type":"USER",'),
-      encoder.encode('"persona_id":null,"message":"a","created_at":"t"}\n\n'),
+      encoder.encode('data: {"type":"thinking",'),
+      encoder.encode('"persona_id":5}\n\n'),
       encoder.encode(
-        'data: {"id":2,"sort_no":2,"speaker_type":"PERSONA","persona_id":5,"message":"b","created_at":"t"}\n\n',
+        'data: {"type":"message","message":{"id":2,"sort_no":2,"speaker_type":"PERSONA","persona_id":5,"message":"b","created_at":"t"}}\n\n',
       ),
     ];
     let index = 0;
@@ -59,25 +68,21 @@ describe("consumeSseStream", () => {
       }),
     } as unknown as ReadableStreamDefaultReader<Uint8Array>;
 
-    const onMessage = vi.fn();
-    await consumeSseStream(reader, onMessage);
+    const onEvent = vi.fn();
+    await consumeSseStream(reader, onEvent);
 
-    expect(onMessage).toHaveBeenCalledTimes(2);
-    expect(onMessage).toHaveBeenNthCalledWith(1, {
-      id: 1,
-      sort_no: 1,
-      speaker_type: "USER",
-      persona_id: null,
-      message: "a",
-      created_at: "t",
-    });
-    expect(onMessage).toHaveBeenNthCalledWith(2, {
-      id: 2,
-      sort_no: 2,
-      speaker_type: "PERSONA",
-      persona_id: 5,
-      message: "b",
-      created_at: "t",
+    expect(onEvent).toHaveBeenCalledTimes(2);
+    expect(onEvent).toHaveBeenNthCalledWith(1, { type: "thinking", persona_id: 5 });
+    expect(onEvent).toHaveBeenNthCalledWith(2, {
+      type: "message",
+      message: {
+        id: 2,
+        sort_no: 2,
+        speaker_type: "PERSONA",
+        persona_id: 5,
+        message: "b",
+        created_at: "t",
+      },
     });
   });
 });

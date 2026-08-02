@@ -27,6 +27,7 @@ const userParticipatedChat: ChatDetail = {
   chat_id: CHAT_ID,
   title: "歴史談義",
   chat_mode: "USER_PARTICIPATED",
+  topic: null,
   updated_at: "2026-07-30T09:00:00+09:00",
   participants: [
     { type: "USER", name: "あなた" },
@@ -37,6 +38,7 @@ const userParticipatedChat: ChatDetail = {
 const personaOnlyChat: ChatDetail = {
   ...userParticipatedChat,
   chat_mode: "PERSONA_ONLY",
+  topic: "理想のリーダーシップとは",
   participants: [{ type: "PERSONA", persona_id: 10, name: "織田信長", image_url: null }],
 };
 

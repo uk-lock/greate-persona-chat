@@ -27,6 +27,9 @@ CHAT_PERSONA_MIN_COUNT = 1
 CHAT_PERSONA_MAX_COUNT = 5
 """チャット作成時に選択可能なペルソナ数の上限。"""
 
+CHAT_TOPIC_MAX_LENGTH = 255
+"""PERSONA_ONLYモードでの会話のお題（`t_chat.topic`）の最大文字数。"""
+
 PERSONA_ONLY_MAX_TURNS_PER_REQUEST = 50
 """PERSONA_ONLYモードの自動進行1コネクションあたりの最大ターン数（安全弁）。
 

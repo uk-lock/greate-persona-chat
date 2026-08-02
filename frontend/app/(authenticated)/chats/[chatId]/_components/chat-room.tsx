@@ -110,19 +110,24 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-surface-border bg-background/95 px-8 py-4">
-        <h1 className="font-display text-lg font-bold text-heading">{title}</h1>
-        <div className="flex items-center gap-2">
-          {chatDetail.participants.map((participant, index) =>
-            participant.type === "USER" ? (
-              <span key={`user-${index}`} className="text-sm text-muted">
-                あなた
-              </span>
-            ) : (
-              <ParticipantAvatar key={participant.persona_id} participant={participant} />
-            ),
-          )}
+      <header className="sticky top-0 z-10 flex flex-col gap-1 border-b border-surface-border bg-background/95 px-8 py-4">
+        <div className="flex items-center gap-3">
+          <h1 className="font-display text-lg font-bold text-heading">{title}</h1>
+          <div className="flex items-center gap-2">
+            {chatDetail.participants.map((participant, index) =>
+              participant.type === "USER" ? (
+                <span key={`user-${index}`} className="text-sm text-muted">
+                  あなた
+                </span>
+              ) : (
+                <ParticipantAvatar key={participant.persona_id} participant={participant} />
+              ),
+            )}
+          </div>
         </div>
+        {chatDetail.topic && (
+          <p className="text-sm text-muted">お題：{chatDetail.topic}</p>
+        )}
       </header>
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-8 py-6">

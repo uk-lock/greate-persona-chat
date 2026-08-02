@@ -12,10 +12,15 @@ type CreateChatResponse = {
   chat_id: string;
 };
 
-/** 新規チャットを作成する（`POST /chats`）。成功時はS03（/chats/{chat_id}）へ遷移する。 */
+/** 新規チャットを作成する（`POST /chats`）。成功時はS03（/chats/{chat_id}）へ遷移する。
+ *
+ * `topic`（会話のお題）はPERSONA_ONLYモードでのみ使う。USER_PARTICIPATEDでは
+ * バックエンド側が指定不可としてバリデーションするため、undefinedのまま送る。
+ */
 export const createChatAction = async (
   personaIds: number[],
   chatMode: ChatMode,
+  topic?: string,
 ): Promise<CreateChatActionResult> => {
   const cookieStore = await cookies();
   const cookieHeader = getAuthCookieHeader(cookieStore);
@@ -24,7 +29,7 @@ export const createChatAction = async (
   try {
     const result = await apiClient.post<CreateChatResponse>(
       "/chats",
-      { persona_ids: personaIds, chat_mode: chatMode },
+      { persona_ids: personaIds, chat_mode: chatMode, topic: topic ?? null },
       cookieHeader,
     );
     chat = result.data;

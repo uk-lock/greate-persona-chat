@@ -58,6 +58,7 @@ def _build_chat_response(chat: Chat) -> ChatResponse:
         chat_id=chat.public_id,
         title=chat.title,
         chat_mode=chat.chat_mode,
+        topic=chat.topic,
         updated_at=chat.updated_at,
         participants=participants,
     )
@@ -120,7 +121,9 @@ async def create_chat(
     Raises:
         NotFoundError: persona_idsに存在しない、または論理削除済みのペルソナが含まれる場合（404に変換される）。
     """
-    chat = await chat_service.create(current_user, body.persona_ids, body.chat_mode)
+    chat = await chat_service.create(
+        current_user, body.persona_ids, body.chat_mode, body.topic
+    )
     return _build_chat_response(chat)
 
 

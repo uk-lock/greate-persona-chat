@@ -32,6 +32,7 @@ class ChatTurnState(TypedDict):
     """チャットの1リクエスト（`stream_turns`の1回の呼び出し）分のグラフ状態。"""
 
     chat_mode: ChatMode
+    topic: str | None
     participants: list[PersonaProfile]
     history: list[TurnEntry]
     should_generate_title: bool

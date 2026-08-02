@@ -68,6 +68,7 @@ def make_select_speaker(model: BaseChatModel) -> Node:
                 "あなたは複数の偉人ペルソナが参加するチャットの進行役です。"
                 "これまでの会話の流れおよび、各ペルソナの特徴を踏まえ、次に発言するのにふさわしいペルソナを"
                 f"1人選んでください。\n候補:\n{candidates}\n{stop_instruction}"
+                f"{_topic_instruction(state['topic'])}"
             )
         )
         transcript = HumanMessage(
@@ -108,6 +109,7 @@ def make_generate_reply(model: BaseChatModel) -> Node:
                 "参加者と会話しています。以下のプロフィールになりきり、一人称で"
                 "自然に応答してください。地の文・状況説明・他の参加者の発言は含めず、"
                 f"あなた自身のセリフのみを返してください。\n\n{_persona_profile_text(persona)}"
+                f"{_topic_instruction(state['topic'])}"
             )
         )
         messages: list[BaseMessage] = [system]
@@ -167,6 +169,17 @@ def make_maybe_update_title(model: BaseChatModel) -> Node:
         )
 
     return maybe_update_title
+
+
+def _topic_instruction(topic: str | None) -> str:
+    """PERSONA_ONLYの会話のお題をsystem promptへ差し込む文言を組み立てる。
+
+    履歴（`LLM_HISTORY_MAX_MESSAGES`件まで）が流れて古い発言が見えなくなっても
+    方向性を保てるよう、履歴ではなくsystem prompt側に毎ターン含める。
+    """
+    if not topic:
+        return ""
+    return f"\n\nこの会話のお題は「{topic}」です。お題に沿った発言を心がけてください。"
 
 
 def _persona_name(participants: list[PersonaProfile], persona_id: int | None) -> str:

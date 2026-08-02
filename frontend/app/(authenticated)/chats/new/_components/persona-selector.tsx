@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { CHAT_PERSONA_MAX_COUNT, CHAT_PERSONA_MIN_COUNT } from "@/lib/constants";
+import {
+  CHAT_PERSONA_MAX_COUNT,
+  CHAT_PERSONA_MIN_COUNT,
+  CHAT_TOPIC_MAX_LENGTH,
+} from "@/lib/constants";
 import { createChatAction } from "../_actions";
 import type { ChatMode, PersonaOption } from "../_types";
 
@@ -20,15 +24,19 @@ export const PersonaSelector = ({ personas, initialSelectedId }: Props) => {
   );
   const [keyword, setKeyword] = useState("");
   const [chatMode, setChatMode] = useState<ChatMode>("USER_PARTICIPATED");
+  const [topic, setTopic] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const isAtMax = selectedIds.length >= CHAT_PERSONA_MAX_COUNT;
+  const isPersonaOnly = chatMode === "PERSONA_ONLY";
+  const trimmedTopic = topic.trim();
   const canSubmit =
     !isSubmitting &&
     personas.length > 0 &&
     selectedIds.length >= CHAT_PERSONA_MIN_COUNT &&
-    selectedIds.length <= CHAT_PERSONA_MAX_COUNT;
+    selectedIds.length <= CHAT_PERSONA_MAX_COUNT &&
+    (!isPersonaOnly || trimmedTopic.length > 0);
 
   const toggleSelect = (personaId: number) => {
     setSelectedIds((prev) => {
@@ -45,7 +53,11 @@ export const PersonaSelector = ({ personas, initialSelectedId }: Props) => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setFormError(null);
-    const result = await createChatAction(selectedIds, chatMode);
+    const result = await createChatAction(
+      selectedIds,
+      chatMode,
+      isPersonaOnly ? trimmedTopic : undefined,
+    );
     setIsSubmitting(false);
     if (result?.error) {
       setFormError(result.error);
@@ -187,6 +199,28 @@ export const PersonaSelector = ({ personas, initialSelectedId }: Props) => {
           ペルソナ同士の会話を観る
         </label>
       </fieldset>
+
+      {isPersonaOnly && (
+        <div className="flex flex-col gap-1.5">
+          <label className="flex flex-col gap-1.5">
+            <span className="font-display text-sm tracking-wide text-gold">
+              会話のお題（必須）
+            </span>
+            <input
+              type="text"
+              value={topic}
+              onChange={(event) => setTopic(event.target.value)}
+              placeholder="例：理想のリーダーシップとは"
+              maxLength={CHAT_TOPIC_MAX_LENGTH}
+              disabled={isSubmitting}
+              className={inputClassName}
+            />
+          </label>
+          <span className="text-xs text-muted">
+            ペルソナ同士の会話はここで入力したお題に沿って進みます。
+          </span>
+        </div>
+      )}
 
       <button
         type="button"

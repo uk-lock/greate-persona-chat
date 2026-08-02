@@ -13,3 +13,10 @@ export const AUTH_COOKIE_NAME = "access_token";
  */
 export const CHAT_PERSONA_MIN_COUNT = 1;
 export const CHAT_PERSONA_MAX_COUNT = 5;
+
+/** PERSONA_ONLYモードでの会話のお題の最大文字数。
+ *
+ * backend/app/config/constants.py の CHAT_TOPIC_MAX_LENGTH と対応する。
+ * frontend/backend間で値を共有する仕組みが無いため、変更時は両方を同時に更新すること。
+ */
+export const CHAT_TOPIC_MAX_LENGTH = 255;

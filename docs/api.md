@@ -48,7 +48,7 @@ Cookieに設定されたJWTを破棄する。
 GET /chats
 ```
 
-チャット履歴画面で、ログインユーザのチャット一覧を取得する。他ユーザーが作成したチャットは含めない（`t_chat.user_id` が一致するもののみ）。レスポンスにはチャットごとに `title`・`chat_mode`・`updated_at`・参加者一覧（`participants`）を含め、`updated_at`降順で返す。
+チャット履歴画面で、ログインユーザのチャット一覧を取得する。他ユーザーが作成したチャットは含めない（`t_chat.user_id` が一致するもののみ）。レスポンスにはチャットごとに `title`・`chat_mode`・`topic`・`updated_at`・参加者一覧（`participants`）を含め、`updated_at`降順で返す。
 
 `participants` は `chat_mode` が `USER_PARTICIPATED` の場合、先頭に `{ "type": "USER", "name": "あなた" }` を含め、続けてペルソナ（`t_chat_persona.sort_no`順、`{ "type": "PERSONA", "persona_id", "name", "image_url" }`）を並べる。`PERSONA_ONLY` の場合はペルソナのみを`sort_no`順に並べる。
 
@@ -71,6 +71,20 @@ POST /chats
 ```
 
 新規チャット画面で、選択したペルソナ（下限・上限は設定値による）と `chat_mode` をもとにチャットを作成する。選択数の下限・上限は設定値として扱い、リクエストボディの `persona_ids` 件数がその範囲外の場合は400を返す。`title` は固定文言（例：「新規チャット」）で作成され、会話内容をもとにしたLLMによるタイトル自動生成は別途非同期に行う（[db.md](./db.md) t_chat 参照）。
+
+`chat_mode` が `PERSONA_ONLY` の場合、リクエストボディに会話のお題（`topic`）を必須で含める（未指定・空文字は400）。ペルソナ同士の自動会話に方向性を持たせるための入力で、LLMへのプロンプトに毎ターン差し込む（[db.md](./db.md) t_chat 参照）。`USER_PARTICIPATED` の場合は `topic` を指定できない（指定した場合は400）。最大文字数は設定値（`CHAT_TOPIC_MAX_LENGTH`）で管理する。
+
+リクエスト例（PERSONA_ONLY）:
+
+```json
+{
+  "persona_ids": [1, 2],
+  "chat_mode": "PERSONA_ONLY",
+  "topic": "理想のリーダーシップとは"
+}
+```
+
+レスポンスの `topic` は、`USER_PARTICIPATED` の場合は常に`null`。
 
 ---
 

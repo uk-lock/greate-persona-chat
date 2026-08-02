@@ -13,6 +13,7 @@ export type ChatDetail = {
   chat_id: string;
   title: string;
   chat_mode: ChatMode;
+  topic: string | null;
   updated_at: string;
   participants: Participant[];
 };

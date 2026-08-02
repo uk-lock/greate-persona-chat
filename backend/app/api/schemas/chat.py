@@ -2,13 +2,14 @@
 
 import uuid
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.config.constants import (
     CHAT_PERSONA_MAX_COUNT,
     CHAT_PERSONA_MIN_COUNT,
+    CHAT_TOPIC_MAX_LENGTH,
     USER_MESSAGE_MAX_LENGTH,
 )
 from app.models.chat import ChatMode
@@ -49,15 +50,22 @@ class ChatResponse(BaseModel):
     chat_id: uuid.UUID
     title: str
     chat_mode: ChatMode
+    topic: str | None
     updated_at: datetime
     participants: list[Participant]
 
 
 class CreateChatRequest(BaseModel):
-    """チャット作成リクエスト（`POST /chats`）。"""
+    """チャット作成リクエスト（`POST /chats`）。
+
+    `topic`（会話のお題）はPERSONA_ONLYモードでのみ使う。ペルソナ同士の自動会話に
+    方向性を持たせるための入力で、USER_PARTICIPATEDではユーザー自身が会話を
+    主導するため不要（指定するとエラーになる）。
+    """
 
     persona_ids: list[int]
     chat_mode: ChatMode
+    topic: str | None = Field(default=None, max_length=CHAT_TOPIC_MAX_LENGTH)
 
     @field_validator("persona_ids")
     @classmethod
@@ -68,6 +76,15 @@ class CreateChatRequest(BaseModel):
                 f"ペルソナは{CHAT_PERSONA_MIN_COUNT}〜{CHAT_PERSONA_MAX_COUNT}体選択してください"
             )
         return value
+
+    @model_validator(mode="after")
+    def validate_topic_by_chat_mode(self) -> Self:
+        """chat_modeとtopicの組み合わせを検証する。"""
+        if self.chat_mode == ChatMode.PERSONA_ONLY and not self.topic:
+            raise ValueError("PERSONA_ONLYモードでは会話のお題（topic）が必須です")
+        if self.chat_mode == ChatMode.USER_PARTICIPATED and self.topic:
+            raise ValueError("USER_PARTICIPATEDモードではtopicを指定できません")
+        return self
 
 
 class ChatMessageResponse(BaseModel):

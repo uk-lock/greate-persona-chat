@@ -44,6 +44,13 @@ class Chat(AuditMixin, Base):
     chat_mode: Mapped[ChatMode] = mapped_column(
         SAEnum(ChatMode, native_enum=False, length=50), nullable=False
     )
+    topic: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    """会話のお題（PERSONA_ONLYモードのみ必須。USER_PARTICIPATEDではNULL）。
+
+    履歴が流れても方向性が失われないよう、LLMグラフのsystem promptへ毎ターン
+    差し込む（app/llm/nodes.py参照）。DBレベルでは`chat_mode`依存の必須制約を
+    表現できないため、CHECK制約は設けずAPI層（CreateChatRequest）で検証する。
+    """
     is_stopped: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )

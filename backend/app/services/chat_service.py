@@ -112,16 +112,19 @@ class ChatService:
         current_user: User,
         persona_ids: Sequence[int],
         chat_mode: ChatMode,
+        topic: str | None,
     ) -> Chat:
         """新規チャットを作成する。
 
-        選択可能なペルソナ数の範囲チェック（2〜4体）はAPI層のスキーマバリデーションで
+        選択可能なペルソナ数の範囲チェック（2〜4体）、および`chat_mode`と`topic`の
+        組み合わせの妥当性はAPI層のスキーマバリデーション（CreateChatRequest）で
         実施済みであることを前提とし、ここでは各persona_idの存在確認のみ行う。
 
         Args:
             current_user: 操作を行うログインユーザ。
             persona_ids: 参加させるペルソナidの並び（この順序がsort_noになる）。
             chat_mode: チャットモード。
+            topic: 会話のお題（PERSONA_ONLYのみ。USER_PARTICIPATEDではNone）。
 
         Returns:
             作成されたチャット。
@@ -140,6 +143,7 @@ class ChatService:
             user_id=current_user.id,
             title=DEFAULT_CHAT_TITLE,
             chat_mode=chat_mode,
+            topic=topic,
             is_stopped=False,
             created_by=current_user.login_id,
             updated_by=current_user.login_id,
@@ -324,6 +328,7 @@ class ChatService:
         )
         initial_state: ChatTurnState = {
             "chat_mode": chat_mode,
+            "topic": chat.topic,
             "participants": [persona_profile_from_model(p) for p in participants],
             "history": [turn_entry_from_message(m) for m in history],
             "should_generate_title": chat.title == DEFAULT_CHAT_TITLE,

@@ -98,10 +98,36 @@ describe("PersonaSelector", () => {
     render(<PersonaSelector personas={buildPersonas(3)} initialSelectedId={null} />);
 
     await user.click(screen.getByRole("button", { name: "ペルソナ1" }));
-    await user.click(screen.getByRole("radio", { name: "ペルソナ同士の会話を観る" }));
     await user.click(screen.getByRole("button", { name: "チャット開始" }));
 
-    expect(mockedCreateChatAction).toHaveBeenCalledWith([1], "PERSONA_ONLY");
+    expect(mockedCreateChatAction).toHaveBeenCalledWith([1], "USER_PARTICIPATED", undefined);
+  });
+
+  test("PERSONA_ONLYではお題が未入力の間は開始ボタンが無効", async () => {
+    const user = userEvent.setup();
+    render(<PersonaSelector personas={buildPersonas(3)} initialSelectedId={null} />);
+
+    await user.click(screen.getByRole("button", { name: "ペルソナ1" }));
+    await user.click(screen.getByRole("radio", { name: "ペルソナ同士の会話を観る" }));
+
+    expect(screen.getByRole("button", { name: "チャット開始" })).toBeDisabled();
+  });
+
+  test("PERSONA_ONLYでお題を入力するとcreateChatActionへtopicを渡す", async () => {
+    mockedCreateChatAction.mockResolvedValueOnce(undefined);
+    const user = userEvent.setup();
+    render(<PersonaSelector personas={buildPersonas(3)} initialSelectedId={null} />);
+
+    await user.click(screen.getByRole("button", { name: "ペルソナ1" }));
+    await user.click(screen.getByRole("radio", { name: "ペルソナ同士の会話を観る" }));
+    await user.type(screen.getByLabelText("会話のお題（必須）"), "理想のリーダーシップとは");
+    await user.click(screen.getByRole("button", { name: "チャット開始" }));
+
+    expect(mockedCreateChatAction).toHaveBeenCalledWith(
+      [1],
+      "PERSONA_ONLY",
+      "理想のリーダーシップとは",
+    );
   });
 
   test("作成失敗時はエラーメッセージを表示し、選択状態を保持する", async () => {

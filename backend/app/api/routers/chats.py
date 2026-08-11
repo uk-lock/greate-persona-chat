@@ -28,6 +28,7 @@ from app.api.schemas.chat import (
 from app.api.schemas.chat import Participant as ParticipantSchema
 from app.config import constants
 from app.models.chat import Chat, ChatMode
+from app.models.chat_message import ChatMessage
 from app.models.user import User
 from app.services.chat_service import (
     ChatService,
@@ -75,14 +76,24 @@ async def _stream_turns(
     chat_mode: ChatMode,
     request: Request,
     chat_service: ChatService,
+    user_message: ChatMessage | None,
 ) -> AsyncIterator[bytes]:
     """ChatService.stream_turnsが発行するイベントをSSEフレームへ変換する。
+
+    `user_message`（USER_PARTICIPATEDでStreamingResponse開始前に保存済みの
+    ユーザー発言。save_user_message参照）が渡された場合、ChatService.stream_turns
+    のイベントに先立って`message`イベントとして配信する。フロントエンドが
+    送信直後に自分の発言を表示できるようにするため。
 
     LLM呼び出しの失敗（tenacity相当のリトライを使い切った場合。
     app/llm/retry.py参照）は、ヘッダー送信後のためHTTPステータスには変換できず、
     `error`イベントとして配信してストリームを終了する。
     """
     try:
+        if user_message is not None:
+            yield _format_sse_event(
+                MessageEvent(message=ChatMessageResponse.model_validate(user_message))
+            )
         async for event in chat_service.stream_turns(
             chat_id, current_user, chat_mode, request
         ):
@@ -212,12 +223,15 @@ async def post_message(
     """
     internal_chat_id = await chat_service.resolve_internal_id(chat_id)
     chat_mode = await chat_service.get_chat_mode(internal_chat_id, current_user)
+    user_message = None
     if chat_mode == ChatMode.USER_PARTICIPATED:
-        await chat_service.save_user_message(
+        user_message = await chat_service.save_user_message(
             internal_chat_id, current_user, body.message
         )
     return StreamingResponse(
-        _stream_turns(internal_chat_id, current_user, chat_mode, request, chat_service),
+        _stream_turns(
+            internal_chat_id, current_user, chat_mode, request, chat_service, user_message
+        ),
         media_type="text/event-stream",
     )
 

@@ -260,6 +260,9 @@ class ChatService:
         LLM呼び出しを伴わないため、StreamingResponse開始前に実行し、
         例外を通常のHTTPエラーレスポンス（404/403/400）として返せるようにする。
 
+        ユーザーが新規発言を送るのは会話を続ける意思表示のため、`stop`で
+        立てた`is_stopped`フラグをここで解除し、連鎖発言を再開できるようにする。
+
         Args:
             chat_id: 対象のチャットid。
             current_user: 操作を行うログインユーザ。
@@ -273,9 +276,11 @@ class ChatService:
             ForbiddenError: 他ユーザーが作成したチャットの場合。
             ValidationError: user_messageが空の場合。
         """
-        await self._get_owned_chat(chat_id, current_user)
+        chat = await self._get_owned_chat(chat_id, current_user)
         if not user_message:
             raise ValidationError("USER_PARTICIPATEDモードではuser_messageが必須です")
+        chat.is_stopped = False
+        chat.updated_by = current_user.login_id
         sort_no = await self._chat_message_repository.get_next_sort_no(chat_id)
         user_chat_message = ChatMessage(
             chat_id=chat_id,

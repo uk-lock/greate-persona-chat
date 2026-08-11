@@ -14,6 +14,7 @@
   --danger-bg: #fdecec;
   --danger-border: #f3b6b6;
   --danger-text: #b42318;
+  --user-bubble-bg: #bae6fd;
 }
 
 @theme inline {
@@ -30,6 +31,7 @@
   --color-danger-bg: var(--danger-bg);
   --color-danger-border: var(--danger-border);
   --color-danger-text: var(--danger-text);
+  --color-user-bubble-bg: var(--user-bubble-bg);
   --font-display: var(--font-zen-kaku-gothic-new), sans-serif;
   --font-body: var(--font-noto-sans-jp), sans-serif;
 }

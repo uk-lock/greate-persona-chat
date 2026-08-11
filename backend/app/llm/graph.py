@@ -1,9 +1,11 @@
 """チャットのLLMオーケストレーショングラフの定義・構築。
 
-「話者選択→応答生成→タイトル更新→（継続判定）」という循環を1つの
-`StateGraph`として表現する。PERSONA_ONLYの自動進行とUSER_PARTICIPATEDの
-連鎖発言は、同じグラフ構造を共有し、`chat_mode`による分岐
-（select_speakerが停止を選べるか、context.max_turns）だけで挙動を変える。
+「（継続判定）→タイトル更新→話者選択→応答生成」という循環を1つの
+`StateGraph`として表現する。タイトル更新は最初の1回のみ、ペルソナの応答を
+待たずに（ユーザーの最初の発言 or 事前入力されたお題のみを根拠に）行う。
+PERSONA_ONLYの自動進行とUSER_PARTICIPATEDの連鎖発言は、同じグラフ構造を
+共有し、`chat_mode`による分岐（select_speakerが停止を選べるか、
+context.max_turns）だけで挙動を変える。
 """
 
 from langchain_core.language_models import BaseChatModel

@@ -15,9 +15,9 @@ const AuthenticatedLayout = async ({
   }
 
   return (
-    <div className="flex flex-1">
+    <div className="flex flex-1 min-h-0">
       <Sidebar />
-      <main className="flex flex-1 flex-col">{children}</main>
+      <main className="flex flex-1 flex-col min-h-0">{children}</main>
     </div>
   );
 };

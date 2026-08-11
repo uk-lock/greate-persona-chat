@@ -33,7 +33,7 @@ async def check_can_continue(
         return Command(goto=END)
     if await runtime.context.is_stopped():
         return Command(goto=END)
-    return Command(goto="select_speaker")
+    return Command(goto="maybe_update_title")
 
 
 def make_select_speaker(model: BaseChatModel) -> Node:
@@ -63,11 +63,30 @@ def make_select_speaker(model: BaseChatModel) -> Node:
             if can_stop
             else "必ずいずれかのpersona_idを指定してください（nullは選べません）。"
         )
+        spoken_persona_ids = {
+            entry["persona_id"]
+            for entry in state["history"]
+            if entry["speaker"] == "PERSONA"
+        }
+        unspoken_names = [
+            participant["name"]
+            for participant in state["participants"]
+            if participant["persona_id"] not in spoken_persona_ids
+        ]
+        unspoken_instruction = (
+            f"まだ一度も発言していない参加者（{'、'.join(unspoken_names)}）がいる場合は、"
+            "そちらを積極的に選んでください。"
+            if unspoken_names
+            else ""
+        )
         system = SystemMessage(
             content=(
                 "あなたは複数の偉人ペルソナが参加するチャットの進行役です。"
-                "これまでの会話の流れおよび、各ペルソナの特徴を踏まえ、次に発言するのにふさわしいペルソナを"
-                f"1人選んでください。\n候補:\n{candidates}\n{stop_instruction}"
+                "これまでの会話の流れおよび、各ペルソナの特徴を踏まえ、次に発言するのにふさわしいペルソナを1人選んでください。"
+                "同じ人物が2回連続で発言するのは禁止とします。"
+                "また、適宜各ペルソナの発言回数を踏まえて、会話が特定のペルソナに集中し過ぎないように注意してください。"
+                f"{unspoken_instruction}\n"
+                f"候補:\n{candidates}\n{stop_instruction}"
                 f"{_topic_instruction(state['topic'])}"
             )
         )
@@ -103,12 +122,30 @@ def make_generate_reply(model: BaseChatModel) -> Node:
             for participant in state["participants"]
             if participant["persona_id"] == persona_id
         )
+
+        participant_names = [
+            participant["name"]
+            for participant in state["participants"]
+            if participant["persona_id"] != persona_id
+        ]
+        other_participants_instruction = (
+            f"なお、この会話に参加している他の参加者は、{'、'.join(participant_names)}です。"
+            if participant_names
+            else ""
+        )
+
         system = SystemMessage(
             content=(
-                f"あなたは偉人ペルソナ「{persona['name']}」として、ユーザーや他の"
-                "参加者と会話しています。以下のプロフィールになりきり、一人称で"
-                "自然に応答してください。地の文・状況説明・他の参加者の発言は含めず、"
-                f"あなた自身のセリフのみを返してください。\n\n{_persona_profile_text(persona)}"
+                f"あなたは偉人ペルソナ「{persona['name']}」として、ユーザーや他の参加者と会話しています。"
+                f"{other_participants_instruction}"
+                "以下のプロフィールになりきり、一人称で自然に応答してください。"
+                "地の文・状況説明・他の参加者の発言は含めず、あなた自身のセリフのみを返してください。"
+                "以前の発言内容とほぼ重複する発言や、同意するだけの発言は冗長になるため避けてください。"
+                "意見が異なる場合は、遠慮せず反論や異なる視点を述べて構いません。"
+                "プロフィールに沿った性格・価値観を踏まえ、安易に同調せず率直に議論してください。"
+                "発言全体も、冗長にならないようにしてください。"
+                "会話の最初と最後を「」で囲む必要はありません。"
+                f"\n\n{_persona_profile_text(persona)}"
                 f"{_topic_instruction(state['topic'])}"
             )
         )
@@ -137,38 +174,56 @@ def make_generate_reply(model: BaseChatModel) -> Node:
                 "replies_this_turn": state["replies_this_turn"] + 1,
                 "turn_count": state["turn_count"] + 1,
             },
-            goto="maybe_update_title",
+            goto="check_can_continue",
         )
 
     return generate_reply
 
 
 def make_maybe_update_title(model: BaseChatModel) -> Node:
-    """チャットタイトルを自動生成するノードを構築する（最初の1回のみ実行される）。"""
+    """チャットタイトルを自動生成するノードを構築する（最初の1回のみ実行される）。
+
+    ペルソナの応答を待たず、会話の一番序盤（ユーザーの最初の発言、または
+    PERSONA_ONLYで事前入力されたお題）だけを根拠にタイトルを決める。
+    2番目以降のペルソナの発言は考慮しない。
+    """
     structured_model = model.with_structured_output(TitleGeneration)
 
     async def maybe_update_title(
         state: ChatTurnState, *, runtime: Runtime[ChatRunContext]
     ) -> Command:
-        if not state["should_generate_title"]:
-            return Command(goto="check_can_continue")
+        source = _title_source(state) if state["should_generate_title"] else None
+        if source is None:
+            return Command(goto="select_speaker")
         system = SystemMessage(
             content=(
-                "以下の会話内容を踏まえ、このチャットにふさわしい短い日本語の"
+                "以下の内容を踏まえ、このチャットにふさわしい短い日本語の"
                 "タイトルを1つ生成してください。20文字程度を目安にしてください。"
             )
         )
-        transcript = HumanMessage(
-            content=_render_transcript(state["history"], state["participants"])
-        )
-        result = await structured_model.ainvoke([system, transcript])
+        result = await structured_model.ainvoke([system, HumanMessage(content=source)])
         assert isinstance(result, TitleGeneration)
         return Command(
             update={"generated_title": result.title, "should_generate_title": False},
-            goto="check_can_continue",
+            goto="select_speaker",
         )
 
     return maybe_update_title
+
+
+def _title_source(state: ChatTurnState) -> str | None:
+    """タイトル生成の根拠にする文字列を取り出す。
+
+    USER_PARTICIPATEDではユーザーの最初の発言、PERSONA_ONLYでは事前入力された
+    お題を用いる。どちらも無い場合はタイトル生成を行わない。
+    """
+    if state["chat_mode"] == ChatMode.USER_PARTICIPATED:
+        first_user_entry = next(
+            (entry for entry in state["history"] if entry["speaker"] == "USER"),
+            None,
+        )
+        return first_user_entry["text"] if first_user_entry else None
+    return state["topic"]
 
 
 def _topic_instruction(topic: str | None) -> str:

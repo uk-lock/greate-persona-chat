@@ -109,7 +109,7 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
       : "開始ボタンを押して会話を始めましょう";
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col min-h-0">
       <header className="sticky top-0 z-10 flex flex-col gap-1 border-b border-surface-border bg-background/95 px-8 py-4">
         <div className="flex items-center gap-3">
           <h1 className="font-display text-lg font-bold text-heading">{title}</h1>
@@ -130,7 +130,7 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
         )}
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-8 py-6">
+      <div className="flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto px-8 py-6">
         {messages.length === 0 && !isGenerating ? (
           <p className="text-muted">{emptyText}</p>
         ) : (
@@ -255,7 +255,7 @@ const MessageBubble = ({
       <p
         className={`max-w-lg whitespace-pre-wrap rounded-md px-4 py-2 text-sm ${
           isUser
-            ? "bg-wine/50 text-foreground"
+            ? "bg-user-bubble-bg text-foreground"
             : "border border-surface-border bg-surface text-foreground"
         }`}
       >

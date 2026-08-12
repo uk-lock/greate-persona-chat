@@ -274,10 +274,10 @@ class ChatService:
         Raises:
             NotFoundError: チャットが存在しない、または論理削除済みの場合。
             ForbiddenError: 他ユーザーが作成したチャットの場合。
-            ValidationError: user_messageが空の場合。
+            ValidationError: user_messageが空、または空白のみの場合。
         """
         chat = await self._get_owned_chat(chat_id, current_user)
-        if not user_message:
+        if not user_message or not user_message.strip():
             raise ValidationError("USER_PARTICIPATEDモードではuser_messageが必須です")
         chat.is_stopped = False
         chat.updated_by = current_user.login_id

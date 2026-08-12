@@ -30,9 +30,7 @@ def upgrade() -> None:
         sa.Column("summary", sa.Text(), nullable=True),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("personality", sa.Text(), nullable=True),
-        sa.Column(
-            "biography", postgresql.JSONB(astext_type=sa.Text()), nullable=True
-        ),
+        sa.Column("biography", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column(
             "sample_quotes", postgresql.JSONB(astext_type=sa.Text()), nullable=True
         ),

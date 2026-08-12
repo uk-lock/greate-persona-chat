@@ -6,3 +6,12 @@ target-version = "py312"
 ignore = [
     "B008", # FastAPIのDepends()をデフォルト引数に書く慣用パターンのため許容する
 ]
+
+[tool.pytest.ini_options]
+# "."（rootdir=このファイルのあるbackend/）をsys.pathへ追加し、
+# 実行時のカレントディレクトリや起動方法によらず`app`パッケージをimport可能にする。
+pythonpath = ["."]
+# unit/はDB・外部サービスに依存しないUT、integration/は将来追加する実DB前提のIT（tests/README.md参照）。
+# デフォルトではunitのみを対象とし、`pytest tests/integration`は明示的に指定した場合のみ実行する。
+testpaths = ["tests/unit"]
+asyncio_mode = "auto"

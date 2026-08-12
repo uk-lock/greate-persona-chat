@@ -4,8 +4,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
-
-_DEFAULT_RATE_LIMIT_MESSAGE = "リクエストが多すぎます。しばらくしてから再度お試しください。"
+_DEFAULT_RATE_LIMIT_MESSAGE = (
+    "リクエストが多すぎます。しばらくしてから再度お試しください。"
+)
 
 
 async def _rate_limit_exceeded_handler(

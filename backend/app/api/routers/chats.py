@@ -230,7 +230,12 @@ async def post_message(
         )
     return StreamingResponse(
         _stream_turns(
-            internal_chat_id, current_user, chat_mode, request, chat_service, user_message
+            internal_chat_id,
+            current_user,
+            chat_mode,
+            request,
+            chat_service,
+            user_message,
         ),
         media_type="text/event-stream",
     )

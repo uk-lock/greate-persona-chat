@@ -89,7 +89,9 @@ export const PersonaSelector = ({ personas, initialSelectedId }: Props) => {
           選択中のペルソナ（{selectedIds.length}/{CHAT_PERSONA_MAX_COUNT}体選択中）
         </h2>
         {selectedPersonas.length === 0 ? (
-          <p className="text-sm text-muted">ペルソナを{CHAT_PERSONA_MIN_COUNT}体以上選択してください。</p>
+          <p className="text-sm text-muted">
+            ペルソナを{CHAT_PERSONA_MIN_COUNT}体以上選択してください。
+          </p>
         ) : (
           <ul className="flex flex-wrap gap-2">
             {selectedPersonas.map((persona) => (
@@ -203,9 +205,7 @@ export const PersonaSelector = ({ personas, initialSelectedId }: Props) => {
       {isPersonaOnly && (
         <div className="flex flex-col gap-1.5">
           <label className="flex flex-col gap-1.5">
-            <span className="font-display text-sm tracking-wide text-gold">
-              会話のお題（必須）
-            </span>
+            <span className="font-display text-sm tracking-wide text-gold">会話のお題（必須）</span>
             <input
               type="text"
               value={topic}

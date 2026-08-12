@@ -1,0 +1,12 @@
+{
+  "name": "greate-persona-chat-hooks",
+  "private": true,
+  "version": "0.0.0",
+  "description": "git push時にBackend/FrontendのUTを自動実行するためのHuskyフック管理専用パッケージ。アプリ本体の依存関係はbackend/・frontend/でそれぞれ個別管理する。",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

@@ -19,14 +19,8 @@ describe("PersonaList", () => {
   test("ペルソナ一覧をカードとして表示する", () => {
     render(<PersonaList personas={buildPersonas()} />);
 
-    expect(screen.getByRole("link", { name: /織田信長/ })).toHaveAttribute(
-      "href",
-      "/personas/1",
-    );
-    expect(screen.getByRole("link", { name: /豊臣秀吉/ })).toHaveAttribute(
-      "href",
-      "/personas/2",
-    );
+    expect(screen.getByRole("link", { name: /織田信長/ })).toHaveAttribute("href", "/personas/1");
+    expect(screen.getByRole("link", { name: /豊臣秀吉/ })).toHaveAttribute("href", "/personas/2");
   });
 
   test("検索欄に入力すると名前で絞り込まれる", async () => {

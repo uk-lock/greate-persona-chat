@@ -23,6 +23,27 @@ docker compose exec backend alembic upgrade head
 
 新規マイグレーションの作り方を含む詳細は [docs/migration.md](./docs/migration.md) を参照。
 
+## テスト
+
+```bash
+# Backend UT・lint・型チェック
+cd backend && pytest && ruff check . && ruff format --check . && mypy app
+
+# Frontend UT・lint・型チェック・format確認
+cd frontend && npm test && npm run lint && npm run typecheck && npm run format:check
+```
+
+git push時にBackend／FrontendのUT・lint・format確認・型チェックを自動実行するpre-pushフック（Husky）を用意している。
+frontend devcontainerを一度でも作成すれば自動セットアップされる（`postCreateCommand`）。
+backend devcontainerのみ使う場合は、npmが使える場所で初回に1回だけ実行する：
+
+```bash
+npm install
+```
+
+コマンド一覧・IT（結合テスト）との分離方針・pre-pushフックの詳細は
+[docs/testing.md](./docs/testing.md) を参照。
+
 ## 初期データ投入
 
 ペルソナ作成用の管理画面はMVP対象外（DB直接投入前提、[docs/screen-list.md](./docs/screen-list.md) 4節）のため、

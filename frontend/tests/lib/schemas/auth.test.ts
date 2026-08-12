@@ -11,9 +11,7 @@ describe("loginSchema", () => {
     const result = loginSchema.safeParse({ login_id: "", password: "secret" });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.flatten().fieldErrors.login_id).toContain(
-        "ログインIDを入力してください",
-      );
+      expect(result.error.flatten().fieldErrors.login_id).toContain("ログインIDを入力してください");
     }
   });
 
@@ -21,9 +19,7 @@ describe("loginSchema", () => {
     const result = loginSchema.safeParse({ login_id: "taro", password: "" });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.flatten().fieldErrors.password).toContain(
-        "パスワードを入力してください",
-      );
+      expect(result.error.flatten().fieldErrors.password).toContain("パスワードを入力してください");
     }
   });
 

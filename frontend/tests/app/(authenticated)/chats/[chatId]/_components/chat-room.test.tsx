@@ -209,7 +209,11 @@ describe("ChatRoom", () => {
       replyMessage,
     ];
     render(
-      <ChatRoom chatId={CHAT_ID} chatDetail={userParticipatedChat} initialMessages={initialMessages} />,
+      <ChatRoom
+        chatId={CHAT_ID}
+        chatDetail={userParticipatedChat}
+        initialMessages={initialMessages}
+      />,
     );
 
     expect(screen.getByText("こんにちは")).toBeInTheDocument();

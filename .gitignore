@@ -4,4 +4,4 @@
 __pycache__/
 *.pyc
 .claude/.steering/*
-backend/data/
+/node_modules

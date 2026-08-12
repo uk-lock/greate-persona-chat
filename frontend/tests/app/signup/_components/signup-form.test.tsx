@@ -65,9 +65,7 @@ describe("SignupForm", () => {
     await user.type(screen.getByLabelText("パスワード確認"), "secret123");
     await user.click(screen.getByRole("button", { name: "サインアップ" }));
 
-    expect(
-      await screen.findByText("このログインIDは既に使用されています"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("このログインIDは既に使用されています")).toBeInTheDocument();
     expect(screen.getByLabelText("パスワード")).toHaveValue("");
     expect(screen.getByLabelText("パスワード確認")).toHaveValue("");
   });

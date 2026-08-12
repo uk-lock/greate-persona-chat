@@ -52,9 +52,7 @@ export const LoginForm = () => {
           className={inputClassName}
           {...register("login_id")}
         />
-        {errors.login_id && (
-          <p className="text-sm text-danger-text">{errors.login_id.message}</p>
-        )}
+        {errors.login_id && <p className="text-sm text-danger-text">{errors.login_id.message}</p>}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -64,9 +62,7 @@ export const LoginForm = () => {
           disabled={isSubmitting}
           {...register("password")}
         />
-        {errors.password && (
-          <p className="text-sm text-danger-text">{errors.password.message}</p>
-        )}
+        {errors.password && <p className="text-sm text-danger-text">{errors.password.message}</p>}
       </div>
 
       <button

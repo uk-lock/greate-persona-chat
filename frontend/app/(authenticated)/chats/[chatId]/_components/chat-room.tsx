@@ -125,9 +125,7 @@ export const ChatRoom = ({ chatId, chatDetail, initialMessages }: Props) => {
             )}
           </div>
         </div>
-        {chatDetail.topic && (
-          <p className="text-sm text-muted">お題：{chatDetail.topic}</p>
-        )}
+        {chatDetail.topic && <p className="text-sm text-muted">お題：{chatDetail.topic}</p>}
       </header>
 
       <div className="flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto px-8 py-6">

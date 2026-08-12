@@ -96,7 +96,13 @@ export const Sidebar = () => {
     <div className="group relative w-16 shrink-0">
       <nav className="absolute inset-y-0 left-0 z-20 flex w-16 flex-col gap-2 overflow-hidden border-r border-surface-border bg-background py-6 transition-[width] duration-200 ease-out group-hover:w-52 group-hover:shadow-xl group-hover:shadow-black/10">
         {navItems.map(({ href, label, Icon }) => (
-          <Link key={href} href={href} title={label} aria-label={label} className={navLinkClassName}>
+          <Link
+            key={href}
+            href={href}
+            title={label}
+            aria-label={label}
+            className={navLinkClassName}
+          >
             <span className={navIconClassName}>
               <Icon />
             </span>

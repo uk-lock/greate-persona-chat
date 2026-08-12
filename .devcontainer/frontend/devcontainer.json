@@ -9,6 +9,7 @@
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,readonly"
   ],
+  "postCreateCommand": "npm install",
   "customizations": {
     "vscode": {
       "extensions": [

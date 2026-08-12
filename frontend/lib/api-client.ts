@@ -26,10 +26,7 @@ type RequestOptions = {
 };
 
 /** バックエンドAPIを叩き、共通のエラー形式をApiErrorへ変換する薄いfetchラッパー（frontend-typescript-react.md 論点9）。 */
-const request = async <T>(
-  path: string,
-  options: RequestOptions = {},
-): Promise<ApiResult<T>> => {
+const request = async <T>(path: string, options: RequestOptions = {}): Promise<ApiResult<T>> => {
   const response = await fetch(`${config.apiBaseUrl}${path}`, {
     method: options.method ?? "GET",
     headers: {
@@ -56,6 +53,5 @@ export const apiClient = {
   get: <T>(path: string, cookie?: string) => request<T>(path, { cookie }),
   post: <T>(path: string, body?: unknown, cookie?: string) =>
     request<T>(path, { method: "POST", body, cookie }),
-  delete: <T>(path: string, cookie?: string) =>
-    request<T>(path, { method: "DELETE", cookie }),
+  delete: <T>(path: string, cookie?: string) => request<T>(path, { method: "DELETE", cookie }),
 };

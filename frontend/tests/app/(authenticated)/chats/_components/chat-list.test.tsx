@@ -46,10 +46,7 @@ describe("ChatList", () => {
     expect(screen.getByText("歴史談義")).toBeInTheDocument();
     expect(screen.getByText("あなた")).toBeInTheDocument();
     expect(screen.getByText("織田信長")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute(
-      "href",
-      `/chats/${CHAT_ID}`,
-    );
+    expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute("href", `/chats/${CHAT_ID}`);
   });
 
   test("削除ボタン押下で確認ダイアログを表示し、OKで削除してリストから消す", async () => {
@@ -63,7 +60,9 @@ describe("ChatList", () => {
     await user.click(screen.getByRole("button", { name: "OK" }));
 
     expect(mockedDeleteChatAction).toHaveBeenCalledWith(CHAT_ID);
-    expect(await screen.findByText("まだチャットがありません。新規チャットから会話を始めましょう。")).toBeInTheDocument();
+    expect(
+      await screen.findByText("まだチャットがありません。新規チャットから会話を始めましょう。"),
+    ).toBeInTheDocument();
   });
 
   test("キャンセル押下ではdeleteChatActionを呼ばずダイアログを閉じる", async () => {
@@ -79,7 +78,9 @@ describe("ChatList", () => {
   });
 
   test("削除失敗時はエラーメッセージを表示し、一覧は残す", async () => {
-    mockedDeleteChatAction.mockResolvedValueOnce({ error: "削除に失敗しました。時間をおいて再度お試しください。" });
+    mockedDeleteChatAction.mockResolvedValueOnce({
+      error: "削除に失敗しました。時間をおいて再度お試しください。",
+    });
     const user = userEvent.setup();
     render(<ChatList initialChats={buildChats()} />);
 

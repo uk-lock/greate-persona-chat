@@ -19,10 +19,7 @@ describe("Sidebar", () => {
       "/chats/new",
     );
     expect(screen.getByRole("link", { name: "チャット履歴" })).toHaveAttribute("href", "/chats");
-    expect(screen.getByRole("link", { name: "ペルソナ一覧" })).toHaveAttribute(
-      "href",
-      "/personas",
-    );
+    expect(screen.getByRole("link", { name: "ペルソナ一覧" })).toHaveAttribute("href", "/personas");
     expect(screen.getByRole("button", { name: "ログアウト" })).toBeInTheDocument();
   });
 

@@ -39,7 +39,9 @@ export const ChatList = ({ initialChats }: Props) => {
   };
 
   if (chats.length === 0) {
-    return <p className="text-muted">まだチャットがありません。新規チャットから会話を始めましょう。</p>;
+    return (
+      <p className="text-muted">まだチャットがありません。新規チャットから会話を始めましょう。</p>
+    );
   }
 
   return (

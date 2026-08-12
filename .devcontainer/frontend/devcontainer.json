@@ -9,7 +9,7 @@
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,readonly"
   ],
-  "postCreateCommand": "npm install",
+  "postCreateCommand": "frontend/node_modules/.bin/husky",
   "customizations": {
     "vscode": {
       "extensions": [

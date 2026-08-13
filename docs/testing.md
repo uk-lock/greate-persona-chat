@@ -19,15 +19,15 @@ backend/
     │   └── services/      … app/services/ をミラーリング
     │   └── llm/           … app/llm/ をミラーリング（retry・state・models・nodes）
     │   └── api/           … app/api/ をミラーリング（routers・schemas・dependencies・exception handlers）
-    └── integration/       … 将来のIT用（今回はディレクトリのみ用意、未実装）
+    └── integration/       … IT本体（Neon上のテストブランチに実接続。1.3節参照）
 ```
 
 - `unit/`配下は`app/`のディレクトリ構造をそのままミラーリングする。対象を追加する際も
   迷わない配置にするため（[coding/backend-python.md 6節](./coding/backend-python.md)）。
-- `integration/`は、実DB（Docker Compose上のテスト用DB）に対して行う結合テストの置き場として
-  分離してある。今回のスコープでは未実装。
-- リポジトリ・LLMグラフ・チャットモデルはすべてモック／スタブに置き換え、実DB・実LLM APIには
-  一切接続しない。
+- `integration/`は、実DB（Neon上のテストブランチ）に対して行う結合テストの置き場として分離してある。
+  詳細は1.3節を参照。
+- `unit/`配下では、リポジトリ・LLMグラフ・チャットモデルはすべてモック／スタブに置き換え、
+  実DB・実LLM APIには一切接続しない。
 - 非同期テストは`pytest-asyncio`（`asyncio_mode = "auto"`、`pyproject.toml`）で
   `async def test_...`をそのまま実行できるようにしている。
 - `pythonpath = ["."]`（`pyproject.toml`）により、実行時のカレントディレクトリや起動方法に
@@ -73,15 +73,37 @@ mypy app
 
 `mypy`は`app`ディレクトリ全体（`app/__init__.py`・`app/api/__init__.py`を含む、通常のPythonパッケージ構成）を対象にする。特別なフラグは不要。
 
-### 1.3 IT（結合テスト）の分離方針
+### 1.3 IT（結合テスト）
 
-`tests/integration/`は、Docker Compose上のテスト用DBに対して実際にクエリを行う結合テストの
-置き場として用意してあるが、今回のスコープでは未実装（フォルダのみ）。
+`tests/integration/`は、Neon上の専用テストブランチに対して実際にクエリを行う結合テストの置き場。
+devcontainerは使わず、IT専用のオーバーレイ`compose.it.yml`（`compose.yml`にのみ重ねる）を使って
+ホストから直接実行する。
 
 - UTとは明確にディレクトリを分離しているため、`pytest`（引数なし）はITを一切含まない
   （`pyproject.toml`の`testpaths = ["tests/unit"]`）。
-- IT追加後は `pytest tests/integration` のように明示的にパスを指定して実行する想定。
-- テスト用DBの起動方法・接続情報の組み立て方は、IT実装時に別途本ドキュメントへ追記する。
+- 接続先は`IT_DATABASE_URL`（`.env`）を`compose.it.yml`が`DATABASE_URL`として渡す形。
+  `compose.dev.yml`のローカルDBコンテナとは別経路。
+- 各テストはトランザクションでラップし終了時にロールバックする
+  （`tests/integration/conftest.py`）。共有のテストブランチを汚さない。
+- 実行前に`alembic upgrade head`を挟んでいる。未適用のマイグレーションがあれば適用し、
+  無ければ現在のリビジョンを確認するだけで何もしない（冪等）ため、毎回実行してよい。
+  Neonのテストブランチにスキーマが無い状態でIT実行を忘れて失敗する、という事故を避けられる。
+
+```bash
+docker compose -f compose.yml -f compose.it.yml run --rm backend sh -c "alembic upgrade head && pytest tests/integration"
+```
+
+**LLM呼び出しのIT（`tests/integration/llm/`）**：実際のLLM APIに接続する唯一の例外
+（[coding/backend-python.md 6節](./coding/backend-python.md)参照）。費用がかかるため、
+上記の通常のIT実行には含まれない（`pyproject.toml`の`norecursedirs`で自動探索から除外）。
+実行する場合はパスを明示的に指定する。
+
+```bash
+docker compose -f compose.yml -f compose.it.yml run --rm backend pytest tests/integration/llm
+```
+
+安価なモデルへの切り替えは`.env`の`IT_REPLY_MODEL`等で行う。失敗・タイムアウトのケースは
+実際の生成が始まる前にエラーになるよう仕向けており、費用はごく小さい。
 
 ---
 

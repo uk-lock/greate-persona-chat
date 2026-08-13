@@ -1,0 +1,16 @@
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile.dev
+    environment:
+      DATABASE_URL: ${IT_DATABASE_URL}
+      SIGNUP_ENABLED: ${IT_SIGNUP_ENABLED}
+      REPLY_MODEL: ${IT_REPLY_MODEL}
+      SELECTION_MODEL: ${IT_SELECTION_MODEL}
+      TITLE_MODEL: ${IT_TITLE_MODEL}
+      DEBUG: "true"
+    working_dir: /workspace/backend
+    volumes:
+      - .:/workspace
+
+

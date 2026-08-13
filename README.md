@@ -41,7 +41,14 @@ backend devcontainerのみ使う場合は、npmが使える場所で初回に1�
 npm install
 ```
 
-コマンド一覧・IT（結合テスト）との分離方針・pre-pushフックの詳細は
+IT（結合テスト）はdevcontainerを使わず、Neonのテストブランチ接続情報（`.env`の`IT_DATABASE_URL`等）を
+用意した上で以下で実行する（マイグレーション適用は冪等なため毎回実行して問題ない）：
+
+```bash
+docker compose -f compose.yml -f compose.it.yml run --rm backend sh -c "alembic upgrade head && pytest tests/integration"
+```
+
+コマンド一覧・ITの詳細・pre-pushフックの詳細は
 [docs/testing.md](./docs/testing.md) を参照。
 
 ## 初期データ投入

@@ -6,10 +6,9 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from fastapi import Depends, Request
 from slowapi.util import get_remote_address
-from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.config import constants, settings
+from app.config import asyncpg_database_url, constants, settings
 from app.llm.graph import ChatGraph, build_chat_graph
 from app.models.user import User
 from app.repositories.chat_message_repository import ChatMessageRepository
@@ -22,11 +21,7 @@ from app.services.chat_service import ChatService
 from app.services.exceptions import UnauthorizedError
 from app.services.persona_service import PersonaService
 
-_engine = create_async_engine(
-    make_url(settings.database_url)
-    .set(drivername="postgresql+asyncpg")
-    .render_as_string(hide_password=False)
-)
+_engine = create_async_engine(asyncpg_database_url())
 _session_factory = async_sessionmaker(_engine, expire_on_commit=False)
 _chat_graph = build_chat_graph()
 

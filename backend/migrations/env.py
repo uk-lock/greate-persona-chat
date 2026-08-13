@@ -11,10 +11,10 @@ from logging.config import fileConfig
 import sqlalchemy
 from alembic import context
 from sqlalchemy import pool
-from sqlalchemy.engine import Connection, make_url
+from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from app.config import settings
+from app.config import asyncpg_database_url
 
 # app.modelsパッケージのimportにより、配下の全モデル（user/persona/chat/
 # chat_persona/chat_message）がBase.metadataへ登録される。
@@ -29,11 +29,7 @@ if config.config_file_name is not None:
 
 target_metadata: sqlalchemy.MetaData = Base.metadata
 
-DATABASE_URL: str = (
-    make_url(settings.database_url)
-    .set(drivername="postgresql+asyncpg")
-    .render_as_string(hide_password=False)
-)
+DATABASE_URL: str = asyncpg_database_url()
 
 
 def run_migrations_offline() -> None:

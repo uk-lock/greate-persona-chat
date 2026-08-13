@@ -1,6 +1,7 @@
 """環境変数から読み込むアプリケーション設定。"""
 
 from pydantic_settings import BaseSettings
+from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
@@ -47,3 +48,25 @@ class Settings(BaseSettings):
 # signup_enabledはデフォルト値を持たず実行時に環境変数から供給されるが、
 # mypyはBaseSettingsのこの挙動を認識できず必須引数として扱うため無視する
 settings = Settings()  # type: ignore[call-arg]
+
+
+def asyncpg_database_url() -> str:
+    """`settings.database_url`をasyncpgドライバ向けに正規化したURL文字列を返す。
+
+    アプリ本体（app/api/dependencies.py）・Alembic（migrations/env.py）・ITのDB fixture
+    （tests/integration/conftest.py）が同じ変換ロジックを共有するための派生値（5節）。
+
+    - ドライバ指定を`postgresql+asyncpg`へ読み替える。
+    - `channel_binding`・`sslmode`クエリパラメータを除去する（Neonの接続文字列に含まれるが、
+      いずれもlibpq系クライアント向けのパラメータでasyncpgが認識せず接続エラーになるため）。
+    - 代わりにasyncpgが認識する`ssl=require`を付与し、TLS接続自体は維持する
+      （asyncpgは`ssl`パラメータの値としてlibpq形式の文字列を受け付ける。`true`等の
+      真偽値文字列は不可）。
+    """
+    return (
+        make_url(settings.database_url)
+        .set(drivername="postgresql+asyncpg")
+        .difference_update_query(["channel_binding", "sslmode"])
+        .update_query_dict({"ssl": "require"})
+        .render_as_string(hide_password=False)
+    )

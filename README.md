@@ -1,67 +1,60 @@
 # greate-persona-chat
 
-ペルソナを設定してチャットできるアプリ。
+歴史上の偉人や著名人物に"ペルソナ"を与え, 複数体を同じ会話の場に集めて対話できる, LLMチャットアプリ.
 
-## 技術スタック
+## コンテンツ概要
 
-- **フロントエンド**: Next.js 16 / React 19 / TypeScript / Tailwind CSS
-- **バックエンド**: FastAPI / SQLAlchemy / Python 3.12
-- **DB**: PostgreSQL 17（スキーマ管理はAlembic）
+- **実在の歴史上人物に対応**：織田信長やソクラテスなど, 時代や地域を問わないラインナップ
+- **複数ペルソナが同じチャットに参加**：1~5体を選択可能.1対1のチャットだけでなく, キャラ同士の掛け合いも実現
+- **2つのチャットモード**
+  1. ***ペルソナ同士で会話***：
+    - お題を渡すと, 選んだペルソナたちが自動的に会話を進行（いつでも停止可能）.
+  2. ***あなたも会話に参加***：
+    - ユーザーの発言に対し, 文脈に応じてLLMが応答ペルソナを選定し, 会話を進行.
 
-## アプリ起動手順（開発）
-```bash
-docker compose -f compose.yml -f compose.dev.yml up -d
-```
+## アプリ画面
 
-## DBマイグレーション
+**多彩な歴史上人物のラインナップ**
+![ペルソナ一覧](docs/images/s04-personas.png)
 
-スキーマ変更はAlembicで管理する。コンテナ起動時の自動適用はせず、手動で適用する。
+**人物のプロフィール**
+![ペルソナ詳細](docs/images/s05-persona-detail.png)
 
-```bash
-docker compose exec backend alembic upgrade head
-```
+**新規チャット開始**
+![新規チャット画面](docs/images/s01-new-chat.png)
 
-新規マイグレーションの作り方を含む詳細は [docs/migration.md](./docs/migration.md) を参照。
+**チャット**
+![ペルソナ同士の会話](docs/images/s03-chat.png)
 
-## テスト
+**チャット履歴**
+![チャット履歴画面](docs/images/s02-chat-history.png)
 
-```bash
-# Backend UT・lint・型チェック
-cd backend && pytest && ruff check . && ruff format --check . && mypy app
+## 技術面について
 
-# Frontend UT・lint・型チェック・format確認
-cd frontend && npm test && npm run lint && npm run typecheck && npm run format:check
-```
+- **Frondend**: 
+  - Next.js 16 / React 19 / TypeScript / Tailwind CSS
+- **Backend**: 
+  - FastAPI / SQLAlchemy / Python 3.12
+- **DB**: 
+  - PostgreSQL 17（Alembicでスキーマ管理）
+- **設計プロセス**: 
+  - SDD（仕様駆動開発）を実践し, 要件定義・画面設計・API/DB設計を`docs/`配下にドキュメントとして保持しながら開発
+- **テスト運用**: 
+  - UT（単体）・IT（外部のマネージドDB上の専用ブランチへの結合テスト）・E2E（Playwrightによる画面横断テスト）の3層構成.git push時にHuskyで自動チェック
+- **開発環境**: 
+  - backend/frontendを分離したdevContainer + Docker Compose.Claude CodeからPlaywright MCPでブラウザを直接操作できる構成も用意
 
-git push時にBackend／FrontendのUT・lint・format確認・型チェックを自動実行するpre-pushフック（Husky）を用意している。
-frontend devcontainerを一度でも作成すれば自動セットアップされる（`postCreateCommand`）。
-backend devcontainerのみ使う場合は、npmが使える場所で初回に1回だけ実行する：
+## 設計ドキュメント
 
-```bash
-npm install
-```
+- [要件定義書](docs/requirements-definition.md)
+- [画面一覧](docs/screen-list.md)
+- [API設計](docs/api.md)
+- [DB設計](docs/db.md)
 
-IT（結合テスト）はdevcontainerを使わず、Neonのテストブランチ接続情報（`.env`の`IT_DATABASE_URL`等）を
-用意した上で以下で実行する（マイグレーション適用は冪等なため毎回実行して問題ない）：
+## 開発環境について
 
-```bash
-docker compose -f compose.yml -f compose.it.yml run --rm backend sh -c "alembic upgrade head && pytest tests/integration"
-```
+開発環境の起動・DBマイグレーション・UT/IT/E2Eの実行は, すべて`make`コマンドに集約（`make up-dev`／`make migrate-dev`／`make ut`／`make it`／`make e2e`など）.
 
-コマンド一覧・ITの詳細・pre-pushフックの詳細は
-[docs/testing.md](./docs/testing.md) を参照。
+Docker Composeの構成も用途ごとにオーバーレイを重ねる形式.backend・frontend・DBの基本セットに, 開発用（ローカルDBコンテナ）・結合テスト用／E2E用（外部のマネージドDBに接続）と, 環境ごとにcomposeファイルを差し替える構成.
 
-## 初期データ投入
-
-ペルソナ作成用の管理画面はMVP対象外（DB直接投入前提、[docs/screen-list.md](./docs/screen-list.md) 4節）のため、
-初期データは`backend/tools/`配下のツールでDBへ直接投入する。
-
-```bash
-# 事前にbackend/data/init_user.json（login_id・password）とbackend/data/init_persona.json（ペルソナ一覧）を用意する
-docker compose exec backend python -m tools.insert_init_data
-```
-
-初期ユーザ・ペルソナをまとめて投入する。いずれも同一データを指すレコードが既に存在する場合は何もしない（べき等）。
-
-`backend/data/`は投入用の一時的な作業ファイル置き場のためgit管理対象外（`.gitignore`）とする。
-投入後はDB側が正であり、`init_user.json`・`init_persona.json`は各自のローカルで用意する。
+詳細は[docs/development.md](docs/development.md)を参照.

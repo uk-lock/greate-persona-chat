@@ -21,6 +21,7 @@
 - フロントエンド実装: frontend/
 - バックエンド実装: backend/
 - ドキュメント: docs/
+- README.md: 外部公開向け（製品説明・スクリーンショット）。開発者向け詳細は docs/development.md へ
 
 ## Claude Code の運用
 - 変更前に inspect / plan / verify の順で確認する

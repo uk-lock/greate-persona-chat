@@ -24,6 +24,15 @@ COPY package*.json ./
 
 RUN npm install
 
+# Claude Code用Playwright MCPサーバ（.mcp.json）がこのコンテナ内でヘッドレスブラウザを
+# 起動できるようにするための事前インストール。OS側の共有ライブラリ（libnss3等）のみを
+# ここでイメージに焼き込む（install-deps、apt経由）。Chromium本体のダウンロードは含めない：
+# 本体は/root/.cache/ms-playwrightに入るが、そこはcompose.dev.ymlでnamed volume
+# （frontend_playwright_cache）にしており、イメージ再ビルドのたびに再ダウンロードしたくない
+# ため。本体のダウンロードはdevcontainer.jsonのpostCreateCommand側で行う（2回目以降は
+# volumeにキャッシュ済みのためスキップされる）。
+RUN npx --yes playwright install-deps chromium
+
 COPY . .
 
 CMD ["npm", "run", "dev"]

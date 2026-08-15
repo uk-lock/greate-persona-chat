@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
 :root {
+  /* フォント本体は./local-fonts.css（@font-face、layout.tsxでimport）で定義。
+     next/font/googleは使わず、Google Fontsのファイルをリポジトリに同梱している
+     （ビルド時にGoogle Fonts CDNへ接続する必要をなくすため。docs/testing.md 5.1節）。 */
+  --font-zen-kaku-gothic-new: "Zen Kaku Gothic New";
+  --font-noto-sans-jp: "Noto Sans JP";
   --background: #ffffff;
   --foreground: #14100c;
   --surface: #f8fafc;

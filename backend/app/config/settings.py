@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     title_model: str
     """チャットタイトル自動生成に使うモデル。形式はreply_modelと同じ。"""
 
+    rate_limit_signup_per_hour: int
+    """サインアップAPI（POST /auth/signup）のレート制限（1時間あたりの上限回数、
+    IPアドレス単位）。本番/開発では小さい値（例：3）を想定するが、IT・E2Eでは
+    テストクライアント・フロントエンドコンテナ経由で全リクエストが同一IPに見えるため、
+    より大きい値に環境ごと上書きする（IT_RATE_LIMIT_SIGNUP_PER_HOUR・
+    E2E_RATE_LIMIT_SIGNUP_PER_HOUR。docs/testing.md参照）。"""
+
     openai_api_key: str | None = None
     """OpenAI APIキー。reply_model等でprovider=openaiを指定した場合に必要。
 
@@ -57,16 +64,18 @@ def asyncpg_database_url() -> str:
     （tests/integration/conftest.py）が同じ変換ロジックを共有するための派生値（5節）。
 
     - ドライバ指定を`postgresql+asyncpg`へ読み替える。
-    - `channel_binding`・`sslmode`クエリパラメータを除去する（Neonの接続文字列に含まれるが、
-      いずれもlibpq系クライアント向けのパラメータでasyncpgが認識せず接続エラーになるため）。
-    - 代わりにasyncpgが認識する`ssl=require`を付与し、TLS接続自体は維持する
-      （asyncpgは`ssl`パラメータの値としてlibpq形式の文字列を受け付ける。`true`等の
-      真偽値文字列は不可）。
+    - Neon（IT・E2E・本番）の接続文字列は`channel_binding`・`sslmode`クエリパラメータを
+      含むが、いずれもlibpq系クライアント向けのパラメータでasyncpgが認識せず接続エラーに
+      なるため、これらが含まれる場合のみ除去し、代わりにasyncpgが認識する`ssl=require`を
+      付与してTLS接続自体は維持する（asyncpgは`ssl`パラメータの値としてlibpq形式の文字列を
+      受け付ける。`true`等の真偽値文字列は不可）。
+    - ローカル開発用DB（`db`サービス、`postgres:17-alpine`）はSSLを有効化しておらず、
+      接続文字列にも`sslmode`等は含まれないため、この分岐には入らない
+      （`ssl=require`を無条件に付けるとSSL未対応のdbサービス相手に接続が拒否される）。
     """
-    return (
-        make_url(settings.database_url)
-        .set(drivername="postgresql+asyncpg")
-        .difference_update_query(["channel_binding", "sslmode"])
-        .update_query_dict({"ssl": "require"})
-        .render_as_string(hide_password=False)
-    )
+    url = make_url(settings.database_url).set(drivername="postgresql+asyncpg")
+    if {"channel_binding", "sslmode"} & set(url.query):
+        url = url.difference_update_query(
+            ["channel_binding", "sslmode"]
+        ).update_query_dict({"ssl": "require"})
+    return url.render_as_string(hide_password=False)

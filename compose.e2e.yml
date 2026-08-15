@@ -1,0 +1,55 @@
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile.prod
+    environment:
+      DATABASE_URL: ${E2E_DATABASE_URL}
+      SIGNUP_ENABLED: ${E2E_SIGNUP_ENABLED}
+      REPLY_MODEL: ${E2E_REPLY_MODEL}
+      SELECTION_MODEL: ${E2E_SELECTION_MODEL}
+      TITLE_MODEL: ${E2E_TITLE_MODEL}
+      RATE_LIMIT_SIGNUP_PER_HOUR: ${E2E_RATE_LIMIT_SIGNUP_PER_HOUR}
+      E2E_RESET_CONFIRM: ${E2E_RESET_CONFIRM:-false}
+      DEBUG: "false"
+    # compose.ymlのportsはリスト同士がマージ（追加）されるため、上書きではなく
+    # !override（Compose Specのマージタグ）で明示的に置き換える。単に書くだけでは
+    # compose.ymlの${BACKEND_PORT:-8000}も生き残ってしまい、devスタックと同時起動した際に
+    # ホストポートが衝突する。
+    ports: !override
+      - "${E2E_BACKEND_PORT:-8100}:8000"
+
+  frontend:
+    build:
+      dockerfile: Dockerfile.prod
+      args:
+        API_BASE_URL: ${E2E_API_BASE_URL}
+    environment:
+      SIGNUP_ENABLED: ${E2E_SIGNUP_ENABLED}
+    ports: !override
+      - "${E2E_FRONTEND_PORT:-3100}:3000"
+
+  e2e:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.e2e
+    environment:
+      # frontendコンテナと同じネットワーク名前空間を共有する（下のnetwork_mode）ため、
+      # frontendではなくloopbackアドレスでアクセスする。backendはSecure属性付きCookieを
+      # 発行しており、ブラウザはhttp://localhost・127.0.0.1のみを「安全な文脈」として
+      # 特別扱いする（W3C secure context）。frontend:3000のようなDockerの内部ホスト名だと
+      # HTTP接続がsecureとみなされず、ブラウザがCookie自体を保存しない
+      # （実運用のHTTPSでは起きない問題）。
+      # "localhost"ではなく"127.0.0.1"を使うのは、コンテナ内のDNS解決が"localhost"を
+      # まず::1（IPv6）に解決してしまい、Next.jsサーバーがIPv4にしかbindしていないため
+      # 接続できない事象が実際に発生したため（127.0.0.1もsecure context対象なので
+      # 問題を回避しつつ安全に到達できる）。
+      E2E_BASE_URL: http://127.0.0.1:3000
+    # --rmでコンテナごと消えるため、失敗時のtrace/screenshot（デバッグに必要）を
+    # ホスト側に残すためのマウント。
+    volumes:
+      - ./frontend/test-results:/workspace/frontend/test-results
+    depends_on:
+      - frontend
+    # frontendサービスとネットワーク名前空間を共有する。network_modeとnetworksは併用不可のため、
+    # 上のnetworks指定は行わない（frontendが参加しているapp-networkへの到達性もこれで確保される）。
+    network_mode: service:frontend

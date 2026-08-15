@@ -5,15 +5,24 @@ import { config } from "@/lib/config";
 import { AUTH_COOKIE_NAME } from "@/lib/constants";
 import { SignupForm } from "./_components/signup-form";
 
-/** S06 サインアップ画面（/signup）。 */
+/** S06 サインアップ画面（/signup）。
+ *
+ * `cookies()`を最初に呼ぶことで、このページを常に動的レンダリングにする。
+ * `next build`のページデータ収集時（ビルド環境にはランタイム用の`SIGNUP_ENABLED`が
+ * 渡っていない）に、動的API呼び出しより前に`redirect()`で処理が終わってしまうと、
+ * Next.jsが「常に同じ結果を返す静的ページ」と誤判定し、ビルド時点の（≒無効化されている）
+ * `config.signupEnabled`の値で307リダイレクトを静的にプリレンダーしてしまう
+ * （実行時に`SIGNUP_ENABLED=true`を渡しても二度と評価し直されず、/signupが恒久的に
+ * 到達不能になる。E2E導入時に発覚した不具合）。
+ */
 const SignupPage = async () => {
-  if (!config.signupEnabled) {
-    redirect("/login");
-  }
-
   const cookieStore = await cookies();
   if (cookieStore.has(AUTH_COOKIE_NAME)) {
     redirect("/chats");
+  }
+
+  if (!config.signupEnabled) {
+    redirect("/login");
   }
 
   return (

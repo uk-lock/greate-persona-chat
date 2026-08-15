@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ApiError, apiClient } from "@/lib/api-client";
@@ -43,5 +44,9 @@ export const createChatAction = async (
     return { error: "チャットの作成に失敗しました。時間をおいて再度お試しください。" };
   }
 
+  // /chats（チャット履歴一覧）はクライアント側のルーターキャッシュにより、作成直後に
+  // 遷移しても古い一覧（作成前のもの）が表示されることがあるため、明示的に無効化する
+  // （E2E導入時に発覚。deleteChatAction同様）。
+  revalidatePath("/chats");
   redirect(`/chats/${chat.chat_id}`);
 };

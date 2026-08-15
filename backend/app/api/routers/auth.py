@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from app.api.dependencies import create_access_token, get_auth_service
 from app.api.rate_limit import limiter
 from app.api.schemas.auth import AuthResponse, LoginRequest, SignupRequest
-from app.config import constants
+from app.config import constants, settings
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -24,7 +24,7 @@ def _set_auth_cookie(response: Response, token: str) -> None:
 
 
 @router.post("/signup", status_code=201)
-@limiter.limit(f"{constants.RATE_LIMIT_SIGNUP_PER_HOUR}/hour")
+@limiter.limit(f"{settings.rate_limit_signup_per_hour}/hour")
 async def signup(
     request: Request,
     body: SignupRequest,

@@ -20,6 +20,7 @@ services:
       - .:/workspace
       - frontend_node_modules:/workspace/frontend/node_modules
       - frontend_next:/workspace/frontend/.next
+      - frontend_playwright_cache:/root/.cache/ms-playwright
 
   db:
     image: postgres:17-alpine
@@ -42,4 +43,5 @@ services:
 volumes:
   frontend_node_modules:
   frontend_next:
+  frontend_playwright_cache:
   postgres-data:

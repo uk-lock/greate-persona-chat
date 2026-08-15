@@ -18,10 +18,14 @@ from app.repositories.persona_repository import PersonaRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
 from app.services.chat_service import ChatService
-from app.services.exceptions import UnauthorizedError
+from app.services.exceptions import AppError, UnauthorizedError
 from app.services.persona_service import PersonaService
 
-_engine = create_async_engine(asyncpg_database_url())
+# pool_pre_ping: プールから払い出す直前に軽量なpingでコネクションの生存確認を行う。
+# リクエストキャンセル等でプール内のコネクションが破損した場合（E2E導入時に発覚。
+# docs/testing.md参照）でも、ユーザーに500を返さず透過的に新しいコネクションへ
+# 張り替えられるようにするための保険。
+_engine = create_async_engine(asyncpg_database_url(), pool_pre_ping=True)
 _session_factory = async_sessionmaker(_engine, expire_on_commit=False)
 _chat_graph = build_chat_graph()
 
@@ -29,15 +33,27 @@ _chat_graph = build_chat_graph()
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """リクエスト単位のAsyncSessionを払い出す。
 
-    正常終了時はcommit、例外発生時はrollackする（backend-python.md 14節）。
+    正常終了時はcommit、例外発生時はrollbackする（backend-python.md 14節）。
+
+    ただし`AppError`（サービス層が意図して送出する業務例外、例：ログイン失敗・重複エラー等）は
+    例外ではあるが、それまでの変更はサービス層が意図した結果である。例えば
+    `AuthService.login`はパスワード誤りのたびに`failed_login_count`を加算してから
+    `UnauthorizedError`を送出するが、これを他の例外と同様にrollbackすると加算自体が
+    無かったことになり、連続失敗によるロックが機能しなくなる（実際に発生していたバグ）。
+    そのため`AppError`は他の例外（バグ・インフラ障害等、状態を保存すべきでないもの）とは
+    区別してcommitする。
     """
     async with _session_factory() as session:
         try:
             yield session
+        except AppError:
             await session.commit()
+            raise
         except Exception:
             await session.rollback()
             raise
+        else:
+            await session.commit()
 
 
 def get_user_repository(session: AsyncSession = Depends(get_db)) -> UserRepository:

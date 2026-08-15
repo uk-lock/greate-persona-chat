@@ -59,6 +59,33 @@ async def test_signup_with_duplicate_login_id_returns_409(
     assert second.status_code == 409
 
 
+async def test_repeated_login_failures_locks_account(
+    client: httpx.AsyncClient, make_login_id: Callable[[], str]
+) -> None:
+    """`LOGIN_FAILURE_LIMIT`回連続でログインに失敗すると、正しいパスワードでも423になる。
+
+    各失敗レスポンスはサービス層が意図して送出する`UnauthorizedError`（401）経由だが、
+    その際に加算される`failed_login_count`自体はリクエストをまたいでDBへ永続化されて
+    いる必要がある（`get_db`がAppError発生時もcommitすることの回帰テスト。
+    以前はrollbackされてしまい、何回失敗してもロックされないバグがあった）。
+    """
+    login_id = make_login_id()
+    password = "password123"
+    await client.post("/auth/signup", json={"login_id": login_id, "password": password})
+    client.cookies.clear()
+
+    for _ in range(constants.LOGIN_FAILURE_LIMIT):
+        response = await client.post(
+            "/auth/login", json={"login_id": login_id, "password": "wrong-password"}
+        )
+        assert response.status_code == 401
+
+    locked_response = await client.post(
+        "/auth/login", json={"login_id": login_id, "password": password}
+    )
+    assert locked_response.status_code == 423
+
+
 async def test_logout_clears_auth_cookie(
     client: httpx.AsyncClient, make_login_id: Callable[[], str]
 ) -> None:

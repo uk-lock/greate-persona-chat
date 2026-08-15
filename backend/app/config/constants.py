@@ -54,5 +54,5 @@ RATE_LIMIT_MESSAGE_PER_MINUTE = 10
 RATE_LIMIT_MESSAGE_PER_DAY = 50
 """メッセージ送信APIのレート制限（1日あたりの回数、ユーザー単位）。"""
 
-RATE_LIMIT_SIGNUP_PER_HOUR = 3
-"""サインアップAPIのレート制限（1時間あたりの回数、IPアドレス単位）。"""
+# サインアップAPIのレート制限は環境（本番/開発/IT/E2E）で変えたいため、定数ではなく
+# app.config.settings.Settings.rate_limit_signup_per_hour（環境変数）で管理する。

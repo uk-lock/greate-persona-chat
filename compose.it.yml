@@ -8,6 +8,7 @@ services:
       REPLY_MODEL: ${IT_REPLY_MODEL}
       SELECTION_MODEL: ${IT_SELECTION_MODEL}
       TITLE_MODEL: ${IT_TITLE_MODEL}
+      RATE_LIMIT_SIGNUP_PER_HOUR: ${IT_RATE_LIMIT_SIGNUP_PER_HOUR}
       DEBUG: "true"
     working_dir: /workspace/backend
     volumes:

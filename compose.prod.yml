@@ -10,4 +10,9 @@ services:
   frontend:
     build:
       dockerfile: Dockerfile.prod
+      # Cloud Run等、compose以外の経路でビルドする場合はここのbuild.argsは使われない。
+      # 別途そのビルドパイプライン側でAPI_BASE_URLをbuild-argとして渡す必要がある
+      # （渡さないとfrontend/Dockerfile.prodのnpm run build自体が失敗する）。
+      args:
+        API_BASE_URL: ${API_BASE_URL}
     restart: unless-stopped

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ApiError, apiClient } from "@/lib/api-client";
@@ -24,5 +25,8 @@ export const deleteChatAction = async (chatId: string): Promise<DeleteChatAction
     return { error: "削除に失敗しました。時間をおいて再度お試しください。" };
   }
 
+  // 一覧はChatList側で楽観的にクライアント状態を更新しているが、ルーターキャッシュに
+  // 残った古い一覧を後から再訪した際に見せないよう、サーバー側のキャッシュも無効化する。
+  revalidatePath("/chats");
   return undefined;
 };

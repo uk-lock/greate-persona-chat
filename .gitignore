@@ -6,3 +6,6 @@ __pycache__/
 .claude/.steering/*
 /node_modules
 .env*
+/frontend/test-results
+# Claude CodeのPlaywright MCP（.mcp.json）がスナップショット・コンソールログを書き出す作業ディレクトリ
+/.playwright-mcp

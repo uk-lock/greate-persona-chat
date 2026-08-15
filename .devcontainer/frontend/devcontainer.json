@@ -9,7 +9,7 @@
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,readonly"
   ],
-  "postCreateCommand": "frontend/node_modules/.bin/husky",
+  "postCreateCommand": "frontend/node_modules/.bin/husky && npx --yes playwright install chromium",
   "customizations": {
     "vscode": {
       "extensions": [

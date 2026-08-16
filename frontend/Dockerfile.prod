@@ -8,14 +8,11 @@ RUN npm ci
 
 COPY . .
 
-# next buildはページデータ収集の過程でサーバーコンポーネントを実際に評価するため、
-# lib/config.tsが必須とするAPI_BASE_URLをビルド時にも渡す必要がある
-# （実際の通信は行われないため、コンテナ間DNS名などプレースホルダーで問題ない）。
-# docker composeを経由しないビルド（Cloud Run等）を使う場合は、そのビルド設定側で
-# 別途 --build-arg API_BASE_URL=... を渡すこと（渡さないとビルドが失敗する）。
-ARG API_BASE_URL
-ENV API_BASE_URL=${API_BASE_URL}
-
+# lib/config.tsのAPI_BASE_URLはgetterで参照時まで評価を遅らせており、実際に読まれるのは
+# cookies()等で動的レンダリングが確定した後（Server Action / Route Handler / dynamicなページ）
+# のみ。next build自体はconfigをimportするだけで値を読まないため、ビルド時にAPI_BASE_URLを
+# 渡す必要はない（同一イメージをstaging/prod間で使い回せる。値は実行時にcompose等の
+# environmentで渡す）。
 RUN npm run build
 
 FROM node:24-alpine AS runner

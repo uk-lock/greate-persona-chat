@@ -175,7 +175,7 @@ git push時は後述のpre-pushフックが自動的に同等のチェックを�
 
 ---
 
-## 4. git push時の自動実行（pre-push フック）
+## 4. git push／commit時の自動実行（pre-push／pre-commit フック）
 
 ### 4.1 採用方式
 
@@ -251,6 +251,27 @@ npm install
 pre-pushはローカルの`--no-verify`で回避可能なため、中央で強制力を持たせるにはCI
 （例：GitHub Actionsでのpush/PR時のUT実行）が別途必要になる。今回のスコープには含めていない。
 
+### 4.5 git commit時の自動実行（pre-commit フック／gitleaks）
+
+`.husky/pre-commit`が、[gitleaks](https://github.com/gitleaks/gitleaks)でステージされた変更
+（`git diff --staged`相当）をスキャンし、APIキー等のシークレットらしき文字列を検知した場合は
+commitを中止する（`gitleaks protect --staged`）。
+
+pre-pushのツールチェーン確認（4.2節、devcontainer内かどうかで実行有無を出し分け・見つからない
+場合は警告のみで続行）とは異なり、gitleaksは見つからない場合も**警告だけで済ませずcommitを中止する**。
+シークレット検知はスキップされると意味がないチェックのため。
+
+- ローカルPC：各自で事前installしておく（例: `brew install gitleaks`）。
+- backend/frontendのdevcontainer：標準では入っていないため、`Dockerfile.dev`側で
+  gitleaksのバイナリをGitHub Releasesから取得し同梱している
+  （`ARG GITLEAKS_VERSION`で明示的にバージョン固定。更新時はbackend/frontend両方の
+  `Dockerfile.dev`を揃えて更新する）。
+
+誤検知した場合は、該当行に`gitleaks:allow`コメントを付与するか、リポジトリルートに
+`.gitleaks.toml`を置いてallowlistを設定する（現状は未使用、default configのみで運用）。
+
+`git commit --no-verify`で本フック自体をスキップできる（緊急時用。通常運用では使わない）。
+
 ---
 
 ## 5. E2E
@@ -305,16 +326,14 @@ compose.e2e.yml            … backend・frontend・e2eの3サービスからな
   そのコンテナの個別IPにしかbindされず、`localhost`はおろか外部からも到達できなくなる
   （E2E導入時に発覚。Cloud Run等、コンテナランタイムが独自に`HOSTNAME`相当を設定してくる
   環境でも同様に起こりうる、Next.js standalone + Dockerの既知の落とし穴）。
-- `frontend/Dockerfile.prod`は`next build`時に`API_BASE_URL`を要求する（`lib/config.ts`が
-  ページデータ収集の過程で参照するため、ビルド時点で設定されていないとビルド自体が失敗する）。
-  そのため`ARG API_BASE_URL`を追加し、`compose.prod.yml`・`compose.e2e.yml`の
-  `build.args`から渡すようにした（E2E導入時に発覚した既存の不備で、E2Eに限らず
-  `Dockerfile.prod`を使う全ての箇所に影響する修正）。E2Eではビルド時にしか使わない値のため
-  `.env`の`E2E_API_BASE_URL`は実際に通信可能なURLである必要はなく、ダミー値でよい
-  （実行時にfrontendが実際に使う`API_BASE_URL`は`compose.yml`側の値をそのまま継承する）。
-  **Cloud Run等、composeを経由しないビルドパイプラインを使う場合はこの`build.args`は
-  効かないため、そちらのビルド設定側で別途`API_BASE_URL`をbuild-argとして渡す必要がある**
-  （渡し忘れると同じ理由でビルドが失敗する）。
+- 過去、`frontend/lib/config.ts`の`API_BASE_URL`が通常プロパティ（モジュールimport時に
+  即評価）だったため、`next build`のページデータ収集の過程で`config`がimportされた時点で
+  値が要求され、ビルド時点で設定されていないとビルド自体が失敗する不備があった
+  （E2E導入時に発覚。E2E用に`.env`の`E2E_API_BASE_URL`というビルド専用ダミー値を
+  `compose.e2e.yml`の`build.args`から渡すことで回避していた）。現在は`config.apiBaseUrl`を
+  getterにして参照時（`cookies()`等で動的レンダリングが確定した後）まで評価を遅らせており、
+  importするだけでは評価されないため、ビルド時に値を渡す必要はない
+  （`E2E_API_BASE_URL`・`build.args`はこの対応により撤去済み）。
 - `next build`は本来`next/font/google`経由でフォントファイルをGoogle Fonts CDNから
   ビルド時に取得するが、日本語フォント（Zen Kaku Gothic New・Noto Sans JP）はGoogle側で
   文字コード範囲ごとに大量のファイル（700個超）に分割されているため取得数が桁違いに多く、
@@ -360,8 +379,6 @@ E2E_RATE_LIMIT_SIGNUP_PER_HOUR … サインアップAPIのレート制限の上
 E2E_RESET_CONFIRM      … bool（true/false）。5.4節参照。既定false
 E2E_BACKEND_PORT        … 省略可。既定8100（devスタックの8000と衝突しないポート）
 E2E_FRONTEND_PORT       … 省略可。既定3100（devスタックの3000と衝突しないポート）
-E2E_API_BASE_URL       … frontendのDockerビルド時のみに使う値（5.1節参照）。実行時に
-                          実際に通信するわけではないため、任意のダミー値でよい
 ```
 
 ### 5.4 データリセット（TRUNCATE + 初期データ再投入）

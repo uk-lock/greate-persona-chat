@@ -1,3 +1,7 @@
+# compose.yml単独ではなく、そのオーバーレイとして使う想定（compose.e2e.ymlと同じ形）。
+# 例: docker compose -f compose.yml -f compose.prod.yml up -d --build
+# API_BASE_URL等の実行時environmentはcompose.yml側で定義済みのため、ここでは
+# Dockerfile.prodへの切り替えなど、本番固有の差分のみを上書きする。
 services:
   backend:
     build:
@@ -10,9 +14,4 @@ services:
   frontend:
     build:
       dockerfile: Dockerfile.prod
-      # Cloud Run等、compose以外の経路でビルドする場合はここのbuild.argsは使われない。
-      # 別途そのビルドパイプライン側でAPI_BASE_URLをbuild-argとして渡す必要がある
-      # （渡さないとfrontend/Dockerfile.prodのnpm run build自体が失敗する）。
-      args:
-        API_BASE_URL: ${API_BASE_URL}
     restart: unless-stopped

@@ -17,4 +17,8 @@ RUN pip install --upgrade pip \
 
 COPY . .
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Cloud Run等はコンテナがlistenすべきポートを$PORT環境変数で渡してくる（コンテナ側が
+# 動的に読まないと、ランタイム側のポート設定をこちらの固定値8000に毎回明示的に
+# 合わせ込む必要が生じる）。exec form（JSON配列）は環境変数展開されないため、
+# sh -c経由にして展開させている。$PORT未設定時（compose等）は8000にフォールバックする。
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

@@ -40,7 +40,7 @@
 - **設計プロセス**: 
   - SDD（仕様駆動開発）を実践し, 要件定義・画面設計・API/DB設計を`docs/`配下にドキュメントとして保持しながら開発
 - **テスト運用**: 
-  - UT（単体）・IT（外部のマネージドDB上の専用ブランチへの結合テスト）・E2E（Playwrightによる画面横断テスト）の3層構成.git push時にHuskyで自動チェック
+  - UT（単体）・IT（外部のマネージドDB上の専用ブランチへの結合テスト）・E2E（Playwrightによる画面横断テスト）の3層構成.git push時にHuskyで自動チェック.git commit時はgitleaksでシークレット漏洩も検知
 - **開発環境**: 
   - backend/frontendを分離したdevContainer + Docker Compose.Claude CodeからPlaywright MCPでブラウザを直接操作できる構成も用意
 

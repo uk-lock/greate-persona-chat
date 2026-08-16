@@ -21,8 +21,6 @@ services:
   frontend:
     build:
       dockerfile: Dockerfile.prod
-      args:
-        API_BASE_URL: ${E2E_API_BASE_URL}
     environment:
       SIGNUP_ENABLED: ${E2E_SIGNUP_ENABLED}
     ports: !override

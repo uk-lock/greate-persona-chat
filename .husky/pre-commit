@@ -1,0 +1,33 @@
+#!/usr/bin/env sh
+# git commit前に、gitleaksでステージされた変更内のシークレット漏洩がないかを検知する。
+# 検知した場合はcommitを中止する。
+#
+# gitleaks自体は以下を前提とする：
+# - ローカルPC：各自で事前install済み（例: `brew install gitleaks`）
+# - backend/frontendのdevcontainer：Dockerfile.dev内で自動installされる
+#   （docs/testing.md参照）。devcontainerを作成済みでgitleaksが見つからない場合は、
+#   イメージが古い可能性があるため、一度Rebuildしてください。
+#
+# シークレット検知はスキップせず必ず実行したいチェックのため、pre-pushの
+# ツールチェーン確認（devcontainer内かどうかで実行有無を出し分け）とは異なり、
+# gitleaksが見つからない場合は警告表示のみで済ませず、commit自体を中止する。
+#
+# `--no-verify`で本フック自体をスキップすることも可能（緊急時用）。
+
+set -eu
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "✗ gitleaksが見つからないため、commitを中止します。" >&2
+  echo "  ローカルPC: https://github.com/gitleaks/gitleaks#installing を参考にinstallしてください（例: brew install gitleaks）。" >&2
+  echo "  devcontainer内: 一度devcontainerをRebuildしてください（イメージにgitleaksが同梱される想定）。" >&2
+  exit 1
+fi
+
+echo "▶ gitleaksでステージされた変更をチェックします..."
+if ! gitleaks protect --staged --redact --no-banner -v; then
+  echo "✗ gitleaksがシークレットの可能性がある内容を検知したため、commitを中止します。" >&2
+  echo "  誤検知の場合は、該当行に'gitleaks:allow'コメントを付与するか、.gitleaks.tomlでallowlistを設定してください。" >&2
+  exit 1
+fi
+
+exit 0

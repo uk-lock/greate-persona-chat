@@ -55,6 +55,10 @@ cd frontend && npm test && npm run lint && npm run typecheck && npm run format:c
 git push時にBackend／FrontendのUT・lint・format確認・型チェックを自動実行するpre-pushフック（Husky）を用意している。
 frontend devcontainerを一度でも作成すれば自動セットアップされる（`postCreateCommand`）。
 
+git commit時には、gitleaksでステージされた変更内のシークレット漏洩を検知するpre-commitフック
+（Husky）も用意している。gitleaksはローカルPCでは各自事前install、backend/frontendの
+devcontainerでは`Dockerfile.dev`内で自動installされる。
+
 ITにおけるデータベースはPostgresのcontainerを使わず、Neonのテストブランチを用いる。
 この際、接続情報（`.env`の`IT_DATABASE_URL`等）を用意した上で以下で実行する（マイグレーション適用は冪等なため毎回実行して問題ない）：
 

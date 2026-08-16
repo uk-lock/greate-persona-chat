@@ -1,0 +1,52 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { ApiError, apiClient } from "@/lib/api-client";
+import { getAuthCookieHeader } from "@/lib/cookie";
+import type { ChatMode } from "./_types";
+
+export type CreateChatActionResult = { error: string } | undefined;
+
+type CreateChatResponse = {
+  chat_id: string;
+};
+
+/** 新規チャットを作成する（`POST /chats`）。成功時はS03（/chats/{chat_id}）へ遷移する。
+ *
+ * `topic`（会話のお題）はPERSONA_ONLYモードでのみ使う。USER_PARTICIPATEDでは
+ * バックエンド側が指定不可としてバリデーションするため、undefinedのまま送る。
+ */
+export const createChatAction = async (
+  personaIds: number[],
+  chatMode: ChatMode,
+  topic?: string,
+): Promise<CreateChatActionResult> => {
+  const cookieStore = await cookies();
+  const cookieHeader = getAuthCookieHeader(cookieStore);
+
+  let chat: CreateChatResponse;
+  try {
+    const result = await apiClient.post<CreateChatResponse>(
+      "/chats",
+      { persona_ids: personaIds, chat_mode: chatMode, topic: topic ?? null },
+      cookieHeader,
+    );
+    chat = result.data;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      if (error.status === 401) {
+        redirect("/login");
+      }
+      return { error: error.message };
+    }
+    return { error: "チャットの作成に失敗しました。時間をおいて再度お試しください。" };
+  }
+
+  // /chats（チャット履歴一覧）はクライアント側のルーターキャッシュにより、作成直後に
+  // 遷移しても古い一覧（作成前のもの）が表示されることがあるため、明示的に無効化する
+  // （E2E導入時に発覚。deleteChatAction同様）。
+  revalidatePath("/chats");
+  redirect(`/chats/${chat.chat_id}`);
+};

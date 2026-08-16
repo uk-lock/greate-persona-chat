@@ -1,0 +1,108 @@
+#!/usr/bin/env sh
+# git push前に、Backend/Frontendのlint・format確認・型チェック・UTを自動実行し、
+# いずれかが失敗した場合はpushを中止する。
+#
+# Backend用・Frontend用でdevcontainerが分かれており、一方のコンテナには
+# 他方のツールチェーン（pytest等 / npm）が存在しない。そのため、devcontainer内で
+# 実際に使える方のチェックのみを自動実行し、使えない方は警告を表示してスキップする
+# （docs/testing.md参照）。devcontainer外（host等）では、依存関係の揃い方が
+# devcontainerと異なりうるため、ツールチェーンの有無に関わらずチェックを実行しない。
+# 両方を毎回強制したい場合は、push前にbackend/frontend双方のdevcontainer内で
+# 手動でチェックを実行してください。
+#
+# `--no-verify`で本フック自体をスキップすることも可能（緊急時用）。
+
+set -u
+
+ran_backend=0
+ran_frontend=0
+failed=0
+
+repo_root=$(cd "$(dirname "$0")/.." && pwd)
+
+# devcontainer内かどうかの判定。
+# `command -v pytest` / `command -v npm`だけだと、host側にたまたま
+# pytestやnodeがインストールされている場合に、devcontainer外からのpushでも
+# 誤って実行されてしまう（依存関係が揃っておらずエラーになる）。
+# devcontainer.jsonのworkspaceFolderは"/workspace"に固定されており、
+# compose.dev.ymlでリポジトリルートがそこにマウントされる構成のため、
+# 「Dockerコンテナ内である（/.dockerenvが存在する）」かつ
+# 「リポジトリルートが/workspaceである」の両方を満たす場合のみ、
+# このリポジトリのdevcontainer内と判定する。
+in_devcontainer() {
+  [ -f /.dockerenv ] && [ "$repo_root" = "/workspace" ]
+}
+
+if in_devcontainer; then
+  if command -v pytest >/dev/null 2>&1 && [ -d "$repo_root/backend" ]; then
+    ran_backend=1
+    cd "$repo_root/backend" || exit 1
+
+    echo "▶ Backend lint（ruff check）を実行します..."
+    if ! ruff check .; then
+      failed=1
+    fi
+
+    echo "▶ Backend format確認（ruff format --check）を実行します..."
+    if ! ruff format --check .; then
+      failed=1
+    fi
+
+    echo "▶ Backend型チェック（mypy）を実行します..."
+    if ! mypy app; then
+      failed=1
+    fi
+
+    echo "▶ Backend UT（pytest）を実行します..."
+    if ! pytest; then
+      failed=1
+    fi
+
+    cd "$repo_root" || exit 1
+  else
+    echo "⚠ pytest（backend/requirements-dev.txt由来のツールチェーン）が見つからないため、この環境ではBackendのチェックをスキップしました。"
+  fi
+
+  if command -v npm >/dev/null 2>&1 && [ -d "$repo_root/frontend" ]; then
+    ran_frontend=1
+    cd "$repo_root/frontend" || exit 1
+
+    echo "▶ Frontend lint（eslint）を実行します..."
+    if ! npm run --silent lint; then
+      failed=1
+    fi
+
+    echo "▶ Frontend型チェック（tsc --noEmit）を実行します..."
+    if ! npm run --silent typecheck; then
+      failed=1
+    fi
+
+    echo "▶ Frontend format確認（prettier --check）を実行します..."
+    if ! npm run --silent format:check; then
+      failed=1
+    fi
+
+    echo "▶ Frontend UT（vitest）を実行します..."
+    if ! npm test; then
+      failed=1
+    fi
+
+    cd "$repo_root" || exit 1
+  else
+    echo "⚠ npmが見つからないため、この環境ではFrontendのチェックをスキップしました。"
+  fi
+else
+  echo "⚠ backend/frontendいずれのdevcontainer内でもないため、チェックを一切実行できませんでした。"
+  echo "  push前に、backendまたはfrontendのdevcontainer内で手動でチェックを確認してください。"
+fi
+
+if [ "$ran_backend" -eq 0 ] && [ "$ran_frontend" -eq 0 ]; then
+  echo "✗ Backend・Frontendのどちらのチェックも実行されませんでした。"
+fi
+
+if [ "$failed" -eq 1 ]; then
+  echo "✗ チェックが失敗したため、pushを中止します。"
+  exit 1
+fi
+
+exit 0

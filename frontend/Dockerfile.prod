@@ -1,0 +1,37 @@
+FROM node:24-slim AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci
+
+COPY . .
+
+# next buildはページデータ収集の過程でサーバーコンポーネントを実際に評価するため、
+# lib/config.tsが必須とするAPI_BASE_URLをビルド時にも渡す必要がある
+# （実際の通信は行われないため、コンテナ間DNS名などプレースホルダーで問題ない）。
+# docker composeを経由しないビルド（Cloud Run等）を使う場合は、そのビルド設定側で
+# 別途 --build-arg API_BASE_URL=... を渡すこと（渡さないとビルドが失敗する）。
+ARG API_BASE_URL
+ENV API_BASE_URL=${API_BASE_URL}
+
+RUN npm run build
+
+FROM node:24-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+# Next.js standaloneサーバーはHOSTNAME環境変数のアドレスにのみbindするが、Dockerは全コンテナに
+# 自動でHOSTNAME（コンテナ固有のホスト名）を設定してしまうため、何もしないとそのコンテナの
+# 個別IPにしかbindされず、localhost/127.0.0.1はおろか外部からも到達できなくなる
+# （E2E導入時に発覚。Cloud Run等コンテナランタイムがHOSTNAME相当を独自設定してくる環境でも
+# 同様に起こりうる）。明示的に0.0.0.0を指定して全インターフェースで待ち受けさせる。
+ENV HOSTNAME="0.0.0.0"
+
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+
+CMD ["node", "server.js"]

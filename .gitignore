@@ -1,1 +1,11 @@
 .env
+.mypy_cache
+.ruff_cache
+__pycache__/
+*.pyc
+.claude/.steering/*
+/node_modules
+.env*
+/frontend/test-results
+# Claude CodeのPlaywright MCP（.mcp.json）がスナップショット・コンソールログを書き出す作業ディレクトリ
+/.playwright-mcp

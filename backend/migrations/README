@@ -1,0 +1,1 @@
+非同期dbapi（asyncpg）向けのAlembic設定。運用手順は docs/migration.md を参照。

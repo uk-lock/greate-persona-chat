@@ -1,0 +1,11 @@
+node_modules
+.next
+coverage
+public
+*.md
+package-lock.json
+next-env.d.ts
+*.tsbuildinfo
+test-results
+# Google Fontsを自前ホスト化するための自動生成ファイル（docs/testing.md 5.1節）
+app/local-fonts.css

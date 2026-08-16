@@ -175,7 +175,7 @@ git push時は後述のpre-pushフックが自動的に同等のチェックを�
 
 ---
 
-## 4. git push時の自動実行（pre-push フック）
+## 4. git push／commit時の自動実行（pre-push／pre-commit フック）
 
 ### 4.1 採用方式
 
@@ -250,6 +250,27 @@ npm install
 
 pre-pushはローカルの`--no-verify`で回避可能なため、中央で強制力を持たせるにはCI
 （例：GitHub Actionsでのpush/PR時のUT実行）が別途必要になる。今回のスコープには含めていない。
+
+### 4.5 git commit時の自動実行（pre-commit フック／gitleaks）
+
+`.husky/pre-commit`が、[gitleaks](https://github.com/gitleaks/gitleaks)でステージされた変更
+（`git diff --staged`相当）をスキャンし、APIキー等のシークレットらしき文字列を検知した場合は
+commitを中止する（`gitleaks protect --staged`）。
+
+pre-pushのツールチェーン確認（4.2節、devcontainer内かどうかで実行有無を出し分け・見つからない
+場合は警告のみで続行）とは異なり、gitleaksは見つからない場合も**警告だけで済ませずcommitを中止する**。
+シークレット検知はスキップされると意味がないチェックのため。
+
+- ローカルPC：各自で事前installしておく（例: `brew install gitleaks`）。
+- backend/frontendのdevcontainer：標準では入っていないため、`Dockerfile.dev`側で
+  gitleaksのバイナリをGitHub Releasesから取得し同梱している
+  （`ARG GITLEAKS_VERSION`で明示的にバージョン固定。更新時はbackend/frontend両方の
+  `Dockerfile.dev`を揃えて更新する）。
+
+誤検知した場合は、該当行に`gitleaks:allow`コメントを付与するか、リポジトリルートに
+`.gitleaks.toml`を置いてallowlistを設定する（現状は未使用、default configのみで運用）。
+
+`git commit --no-verify`で本フック自体をスキップできる（緊急時用。通常運用では使わない）。
 
 ---
 

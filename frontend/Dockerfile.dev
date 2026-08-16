@@ -2,6 +2,10 @@ FROM node:24-slim
 
 WORKDIR /workspace/frontend
 
+# git commit時にpre-commitフック（.husky/pre-commit）が使うgitleaksのバージョン。
+# 更新する場合はbackend/Dockerfile.devも合わせて更新すること。
+ARG GITLEAKS_VERSION=8.30.1
+
 RUN apt-get update \
    && apt-get install -y --no-install-recommends \
    ca-certificates \
@@ -19,6 +23,20 @@ RUN apt-get update \
    && apt-get update \
    && apt-get install -y --no-install-recommends docker-ce-cli \
    && rm -rf /var/lib/apt/lists/*
+
+# gitleaks（.husky/pre-commitが利用。devcontainer内には標準で入っていないため同梱する）
+RUN set -eux; \
+   arch="$(dpkg --print-architecture)"; \
+   case "$arch" in \
+       amd64) gitleaks_arch=x64 ;; \
+       arm64) gitleaks_arch=arm64 ;; \
+       *) echo "unsupported arch for gitleaks: $arch" >&2; exit 1 ;; \
+   esac; \
+   curl -fsSL -o /tmp/gitleaks.tar.gz \
+       "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${gitleaks_arch}.tar.gz" \
+   && tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks \
+   && rm /tmp/gitleaks.tar.gz \
+   && gitleaks version
 
 COPY package*.json ./
 

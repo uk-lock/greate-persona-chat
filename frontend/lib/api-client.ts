@@ -1,5 +1,6 @@
 import "server-only";
 import { config } from "./config";
+import { backendAuthHeaders } from "./google-id-token";
 
 /** バックエンドAPIがエラーレスポンス（`{"message": "string"}`）を返した場合の例外。 */
 export class ApiError extends Error {
@@ -31,6 +32,7 @@ const request = async <T>(path: string, options: RequestOptions = {}): Promise<A
     method: options.method ?? "GET",
     headers: {
       "Content-Type": "application/json",
+      ...(await backendAuthHeaders()),
       ...(options.cookie ? { Cookie: options.cookie } : {}),
     },
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,

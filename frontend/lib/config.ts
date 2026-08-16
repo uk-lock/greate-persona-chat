@@ -28,4 +28,14 @@ export const config = {
   get signupEnabled(): boolean {
     return process.env.SIGNUP_ENABLED === "true";
   },
+  /** backend呼び出しにGoogle IDトークンを付与するかどうか。
+   *
+   * Cloud Run運用時のみtrueにする想定（lib/google-id-token.ts参照）。「本番かどうか」ではなく
+   * 「backendのIngressがIAM認証必須になっているか」で決める値のため、NODE_ENVやDEBUG等の
+   * 既存フラグとは連動させていない（例：E2EもDockerfile.prodを使うがdocker compose内部
+   * ネットワーク経由でbackendへ到達するため、この値はfalseのまま）。
+   */
+  get backendIdTokenEnabled(): boolean {
+    return process.env.BACKEND_ID_TOKEN_ENABLED === "true";
+  },
 };

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { config } from "@/lib/config";
 import { getAuthCookieHeader } from "@/lib/cookie";
+import { backendAuthHeaders } from "@/lib/google-id-token";
 
 type RouteParams = {
   params: Promise<{ chatId: string }>;
@@ -22,6 +23,7 @@ export const POST = async (request: Request, { params }: RouteParams): Promise<R
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(await backendAuthHeaders()),
       ...(cookieHeader ? { Cookie: cookieHeader } : {}),
     },
     body,

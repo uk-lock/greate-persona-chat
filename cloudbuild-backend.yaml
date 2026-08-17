@@ -31,3 +31,6 @@ steps:
 
 images:
   - "asia-northeast1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/great-persona-backend:$COMMIT_SHA"
+
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -15,7 +15,13 @@ class SpeakerSelection(BaseModel):
     )
 
 
-class TitleGeneration(BaseModel):
+class ChatTitleSuggestion(BaseModel):
     """チャットタイトル自動生成の結果。"""
 
-    title: str = Field(description="会話内容を要約した短い日本語のチャットタイトル。")
+    title: str = Field(
+        description=(
+            "会話内容を要約した、20文字程度の短い日本語のチャットタイトルの文字列"
+            "そのもの（例：「夏休みの旅行計画について」）。"
+            "スキーマ名・フィールド名・この説明文自体を出力してはならない。"
+        )
+    )

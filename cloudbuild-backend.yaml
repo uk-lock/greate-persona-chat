@@ -1,0 +1,33 @@
+steps:
+  # 1. Docker imageをbuild
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-f"
+      - "backend/Dockerfile"
+      - "-t"
+      - "asia-northeast1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/great-persona-backend:$COMMIT_SHA"
+      - "backend"
+
+  # 2. Artifact Registryへpush
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "asia-northeast1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/great-persona-backend:$COMMIT_SHA"
+
+  # 3. Cloud Runへdeploy
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "greate-persona-backend"
+      - "--image"
+      - "asia-northeast1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/great-persona-backend:$COMMIT_SHA"
+      - "--region"
+      - "asia-northeast1"
+      - "--platform"
+      - "managed"
+
+images:
+  - "asia-northeast1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/great-persona-backend:$COMMIT_SHA"

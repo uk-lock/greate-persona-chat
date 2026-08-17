@@ -25,7 +25,7 @@ from app.llm.nodes import (
     make_maybe_update_title,
     make_select_speaker,
 )
-from app.llm.schemas import SpeakerSelection, TitleGeneration
+from app.llm.schemas import ChatTitleSuggestion, SpeakerSelection
 from app.llm.state import ChatTurnState, PersonaProfile, TurnEntry
 from app.models.chat import ChatMode
 
@@ -316,7 +316,7 @@ class TestMakeGenerateReply:
 
 def _make_title_model(title: str) -> tuple[MagicMock, MagicMock]:
     structured_model = MagicMock()
-    structured_model.ainvoke = AsyncMock(return_value=TitleGeneration(title=title))
+    structured_model.ainvoke = AsyncMock(return_value=ChatTitleSuggestion(title=title))
     model = MagicMock()
     model.with_structured_output = MagicMock(return_value=structured_model)
     return model, structured_model
@@ -405,6 +405,49 @@ class TestMakeMaybeUpdateTitle:
         assert result.goto == "select_speaker"
         assert result.update is None
         structured_model.ainvoke.assert_not_awaited()
+
+    async def test_discards_title_when_model_echoes_schema_class_name(self) -> None:
+        """モデルがタイトル本文の代わりにスキーマのクラス名を返した場合、
+        そのまま保存せず「生成できなかった」扱いにする（既知の事象への防御）。"""
+        model, _ = _make_title_model(ChatTitleSuggestion.__name__)
+        node = make_maybe_update_title(model)
+        state = _make_state(
+            chat_mode=ChatMode.PERSONA_ONLY, should_generate_title=True, topic="お題"
+        )
+        runtime = _make_runtime()
+
+        result = await node(state, runtime=runtime)
+
+        assert result.update == {"should_generate_title": False}
+        assert result.goto == "select_speaker"
+
+    async def test_discards_title_when_model_echoes_field_name(self) -> None:
+        model, _ = _make_title_model("title")
+        node = make_maybe_update_title(model)
+        state = _make_state(
+            chat_mode=ChatMode.PERSONA_ONLY, should_generate_title=True, topic="お題"
+        )
+        runtime = _make_runtime()
+
+        result = await node(state, runtime=runtime)
+
+        assert result.update == {"should_generate_title": False}
+        assert result.goto == "select_speaker"
+
+    async def test_strips_whitespace_from_generated_title(self) -> None:
+        model, _ = _make_title_model("  哲学談義  ")
+        node = make_maybe_update_title(model)
+        state = _make_state(
+            chat_mode=ChatMode.PERSONA_ONLY, should_generate_title=True, topic="お題"
+        )
+        runtime = _make_runtime()
+
+        result = await node(state, runtime=runtime)
+
+        assert result.update == {
+            "generated_title": "哲学談義",
+            "should_generate_title": False,
+        }
 
 
 class TestWrapUserContent:

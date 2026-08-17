@@ -17,7 +17,7 @@ from langgraph.types import Command
 
 from app.config.constants import LLM_HISTORY_MAX_MESSAGES
 from app.llm.context import ChatRunContext
-from app.llm.schemas import SpeakerSelection, TitleGeneration
+from app.llm.schemas import ChatTitleSuggestion, SpeakerSelection
 from app.llm.state import ChatTurnState, PersonaProfile, TurnEntry
 from app.models.chat import ChatMode
 
@@ -233,7 +233,7 @@ def make_maybe_update_title(model: BaseChatModel) -> Node:
     PERSONA_ONLYで事前入力されたお題）だけを根拠にタイトルを決める。
     2番目以降のペルソナの発言は考慮しない。
     """
-    structured_model = model.with_structured_output(TitleGeneration)
+    structured_model = model.with_structured_output(ChatTitleSuggestion)
 
     async def maybe_update_title(
         state: ChatTurnState, *, runtime: Runtime[ChatRunContext]
@@ -252,13 +252,40 @@ def make_maybe_update_title(model: BaseChatModel) -> Node:
         result = await structured_model.ainvoke(
             [system, HumanMessage(content=_wrap_user_content(source, token))]
         )
-        assert isinstance(result, TitleGeneration)
+        assert isinstance(result, ChatTitleSuggestion)
+        title = result.title.strip()
+
+        # モデルが稀にタイトル本文の代わりにスキーマのクラス名/フィールド名を
+        # そのまま返すため（schemas.pyのChatTitleSuggestion参照）、検出時は保存
+        # せず諦める。chat.titleは既定値のままなので、次回ユーザー送信時に
+        # chat_service.py側の判定（chat.title == DEFAULT_CHAT_TITLE）で
+        # 自動的に再試行される（このターン内では再試行しない。同一ターン内で
+        # このノードは複数回通りうるため、ここで即リトライすると同じソースに
+        # 対して何度もLLMを呼び直しかねない）。
+        if not title or _is_schema_echo(title):
+            return Command(
+                update={"should_generate_title": False}, goto="select_speaker"
+            )
         return Command(
-            update={"generated_title": result.title, "should_generate_title": False},
+            update={"generated_title": title, "should_generate_title": False},
             goto="select_speaker",
         )
 
     return maybe_update_title
+
+
+_SCHEMA_ECHO_VALUES = frozenset(
+    {ChatTitleSuggestion.__name__, *ChatTitleSuggestion.model_fields.keys()}
+)
+"""モデルが構造化出力のクラス名・フィールド名をそのまま出力した場合に一致する値。
+`ChatTitleSuggestion.__name__`をハードコードせず参照することで、将来クラス名を
+変えてもこのガードが追随する。"""
+
+
+def _is_schema_echo(title: str) -> bool:
+    """タイトル本文ではなく、構造化出力スキーマのメタ情報（クラス名・フィールド名）
+    をそのまま返してしまった既知の事象を検出する。"""
+    return title.casefold() in {value.casefold() for value in _SCHEMA_ECHO_VALUES}
 
 
 def _title_source(state: ChatTurnState) -> str | None:
